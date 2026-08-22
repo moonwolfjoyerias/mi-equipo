@@ -10,6 +10,8 @@
 <script id="xlsxScriptTag" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg:#FFFFFF;
@@ -701,6 +703,24 @@
 const DATA_KEY = 'team-tree-v2';
 const VIEWER_KEY = 'team-tree-viewer';
 const EDIT_PASSWORD = 'UNICORNIOMW34';
+
+// Mismo proyecto Firebase que la app de la Gala, colección separada para el árbol de equipo
+const firebaseConfig = {
+  apiKey: "AIzaSyCl_am3ptjgU6j8ykRrCItBIJK8qCLNi6c",
+  authDomain: "gala-mw-2026-f82f1.firebaseapp.com",
+  projectId: "gala-mw-2026-f82f1",
+  storageBucket: "gala-mw-2026-f82f1.firebasestorage.app",
+  messagingSenderId: "560061816519",
+  appId: "1:560061816519:web:c423c0de2cb1e8f0f168e2",
+};
+let db = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}catch(e){
+  console.error('No se pudo inicializar Firebase', e);
+}
+const ARBOL_COLLECTION = 'arbolEquipo';
 let members = []; // { id, fullName, leaderId, joinedAt, firstPurchaseAt, pointsMonthKey, pointsP1, pointsP2 }
 let viewerId = null;
 let unlocked = false;
@@ -1411,12 +1431,27 @@ function render(){
 let usingLocalFallback = false;
 
 async function storageGet(key, shared){
+  // Si se abre dentro de Claude, usa su almacenamiento nativo (útil para probar)
   if(window.storage && typeof window.storage.get === 'function'){
     try{
       return await window.storage.get(key, shared);
-    }catch(e){ /* fall through to local backup */ }
+    }catch(e){ /* sigue con el siguiente método */ }
   }
-  usingLocalFallback = true;
+  // Datos compartidos (el árbol): Firestore, para que todas vean lo mismo en vivo
+  if(shared && db){
+    try{
+      const snap = await db.collection(ARBOL_COLLECTION).doc(key).get();
+      if(snap.exists){
+        return {key, value: snap.data().value, shared};
+      }
+      return null;
+    }catch(e){
+      console.error('Error leyendo de Firestore', e);
+      usingLocalFallback = true;
+      /* sigue con el respaldo local */
+    }
+  }
+  // Datos solo del dispositivo (ej. a quién está viendo esta pantalla): localStorage
   try{
     const raw = localStorage.getItem('arbolEquipoMW_' + key);
     return raw !== null ? {key, value: raw, shared} : null;
@@ -1430,9 +1465,21 @@ async function storageSet(key, value, shared){
     try{
       const result = await window.storage.set(key, value, shared);
       if(result) return result;
-    }catch(e){ /* fall through to local backup */ }
+    }catch(e){ /* sigue con el siguiente método */ }
   }
-  usingLocalFallback = true;
+  if(shared && db){
+    try{
+      await db.collection(ARBOL_COLLECTION).doc(key).set({
+        value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return {key, value, shared};
+    }catch(e){
+      console.error('Error guardando en Firestore', e);
+      usingLocalFallback = true;
+      /* sigue con el respaldo local para no perder el cambio */
+    }
+  }
   try{
     localStorage.setItem('arbolEquipoMW_' + key, value);
     return {key, value, shared};
@@ -1463,7 +1510,7 @@ function updateStorageModeBadge(){
   if(!el) return;
   if(usingLocalFallback){
     el.style.display = '';
-    el.textContent = 'Guardando solo en este dispositivo y navegador (no se comparte con otras personas). Para que el equipo se comparta entre todos, usa esta página dentro de Claude en vez de un archivo descargado.';
+    el.textContent = 'No se pudo conectar con la base de datos en la nube, así que se está guardando solo en este dispositivo y no se compartirá con las demás personas. Revisa tu conexión a internet o las reglas de Firestore.';
   }else{
     el.style.display = 'none';
   }
