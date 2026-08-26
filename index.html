@@ -8,8 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script>window.__xlsxState = 'loading';</script>
 <script id="xlsxScriptTag" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
@@ -92,6 +90,8 @@
     font-size:13px;
     letter-spacing:0.03em;
     cursor:pointer;
+    display:inline-flex;
+    align-items:center;
     transition:transform .12s ease, background .15s ease;
   }
   button:hover{background:#6B4C93;}
@@ -143,6 +143,7 @@
   .lock-badge{
     font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
     padding:6px 12px; border-radius:20px;
+    display:inline-flex; align-items:center;
   }
   .lock-badge.locked{background:#F3E9F9; color:var(--lilac-deep);}
   .lock-badge.unlocked{background:#DFF4E8; color:#227A4E;}
@@ -177,6 +178,8 @@
   .points-preview-table .excel-name{font-size:10.5px; color:var(--muted); display:block; margin-top:2px;}
   .points-preview-table .status-ok{color:#227A4E; font-weight:600; font-size:11px;}
   .points-preview-table .status-bad{color:var(--danger); font-weight:600; font-size:11px;}
+  .points-preview-table .preview-existing{color:var(--muted); font-size:12px;}
+  .points-preview-table .preview-result b{color:#227A4E; font-size:13px;}
 
   .period-choice-row{display:flex; gap:10px; margin-bottom:14px;}
   .period-choice{
@@ -189,6 +192,71 @@
   .period-choice:has(input:checked){
     border-color:var(--lilac-deep); background:var(--lilac-soft); font-weight:600;
   }
+
+  .level-summary{ margin-top:6px; display:flex; flex-direction:column; gap:14px; }
+
+  .level-block{ border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(80,50,120,0.08); }
+  .level-block summary{
+    cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; color:#fff;
+  }
+  .level-block summary::-webkit-details-marker{ display:none; }
+  .level-block .lb-title{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; }
+  .level-block .lb-arrow{ font-size:11px; transition:transform .15s ease; }
+  .level-block[open] .lb-arrow{ transform:rotate(90deg); }
+  .level-block .lb-stats{ display:flex; gap:16px; font-size:11.5px; }
+  .level-block .lb-stats b{ font-size:15px; display:block; font-family:'Fraunces', serif; }
+  .level-block .lb-body{
+    background:#fff; padding:14px; display:flex; flex-direction:column; gap:8px;
+  }
+  .person-card{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:#FAF8FD; border:1px solid #F1EBFA; border-radius:8px; padding:10px 14px;
+  }
+  .person-card .pc-name{ font-weight:600; font-size:13px; color:var(--ink); }
+  .person-card .pc-points{ display:flex; gap:14px; text-align:center; }
+  .person-card .pc-points div{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); }
+  .person-card .pc-points b{ display:block; font-size:14px; color:var(--lilac-deep); font-family:'Fraunces', serif; font-weight:700; }
+  .person-card .pc-points .pc-total b{ color:#227A4E; }
+
+  .level-color-1{background:#6B4C93;} .level-color-2{background:#E8664F;} .level-color-3{background:#4E6FE0;}
+  .level-color-4{background:#45AE73;} .level-color-5{background:#D6489B;} .level-color-6{background:#2F9E97;}
+  .level-color-7{background:#E0982F;} .level-color-8{background:#8B5E34;} .level-color-9{background:#5B5EA6;}
+  .level-color-10{background:#8A9A3B;} .level-color-11{background:#B33951;} .level-color-12{background:#5C6B73;}
+
+  .icon{
+    width:15px; height:15px; display:inline-block; vertical-align:-3px; margin-right:5px;
+    fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .icon-tight{ margin-right:0; }
+
+  .month-picker-row{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px;
+    font-size:11.5px; color:var(--muted);
+  }
+  .month-picker-row label{ text-transform:uppercase; letter-spacing:0.05em; font-size:10.5px; }
+  .month-picker-row select{
+    padding:8px 12px; font-size:12.5px; border:1px solid #D8CCEC; border-radius:4px;
+    background:#fff; color:var(--ink); font-family:Arial, Helvetica, sans-serif;
+  }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(30,20,45,0.5);
+    z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{
+    background:#fff; border-radius:10px; max-width:720px; width:100%;
+    max-height:85vh; overflow-y:auto; padding:26px; position:relative;
+    box-shadow:0 20px 50px rgba(30,20,45,0.3);
+  }
+  .modal-box h2{
+    font-family:'Fraunces', serif; font-size:19px; color:var(--ink); margin:0 0 14px; font-weight:600;
+  }
+  .modal-close{
+    position:absolute; top:16px; right:16px; background:none; border:none;
+    font-size:16px; color:var(--muted); cursor:pointer; padding:6px;
+  }
+  .modal-close:hover{ color:var(--lilac-deep); }
   .zoom-controls{display:flex; align-items:center; gap:6px;}
   .zoom-controls button{padding:8px 12px; font-size:14px; line-height:1;}
   #zoomLabel{font-size:11.5px; color:var(--muted); min-width:38px; text-align:center;}
@@ -296,7 +364,7 @@
   .legend i.lvl-12{background:#5C6B73;}
 
   .xlsx-status-row{display:flex; align-items:center; gap:10px; margin:4px 0 14px; flex-wrap:wrap;}
-  .xlsx-badge{font-size:11px; font-weight:600; padding:5px 10px; border-radius:14px; background:#F3E9F9; color:var(--lilac-deep);}
+  .xlsx-badge{font-size:11px; font-weight:600; padding:5px 10px; border-radius:14px; background:#F3E9F9; color:var(--lilac-deep); display:inline-flex; align-items:center;}
   .xlsx-badge.ready{background:#DFF4E8; color:#227A4E;}
   .xlsx-badge.error{background:#FBDDD9; color:var(--danger);}
 
@@ -515,13 +583,18 @@
           <div class="stamp-label">en tu<br>equipo</div>
         </div>
       </div>
+      <button type="button" id="openLevelSummaryBtn" class="secondary" style="margin-top:14px;"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><rect x="6" y="6" width="12" height="15" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Ver resumen por línea</button>
     </div>
 
     <div class="card tree-card">
+      <div class="month-picker-row no-print">
+        <label for="monthSelect">Mes a consultar</label>
+        <select id="monthSelect"></select>
+      </div>
       <div class="tree-toolbar no-print">
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="Buscar por nombre o membresía...">
-          <button type="button" id="searchBtn" aria-label="Buscar">🔍</button>
+          <button type="button" id="searchBtn" aria-label="Buscar"><svg class="icon icon-tight" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <div class="search-nav" id="searchNav" style="display:none;">
             <button type="button" id="prevMatchBtn" class="secondary" aria-label="Resultado anterior">‹</button>
             <span id="matchCounter">1 / 1</span>
@@ -534,9 +607,7 @@
           <button type="button" id="zoomInBtn" class="secondary" aria-label="Ampliar">＋</button>
           <button type="button" id="zoomResetBtn" class="secondary">Restablecer</button>
         </div>
-        <button type="button" id="printTreeBtn" class="secondary">🖨️ Imprimir mi árbol</button>
-        <button type="button" id="downloadPdfBtn" class="secondary">⬇️ Descargar PDF de mi árbol</button>
-        <button type="button" id="downloadTreeExcelBtn" class="secondary">📊 Descargar Excel de mi equipo</button>
+        <button type="button" id="downloadTreeExcelBtn" class="secondary"><svg class="icon" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M15 3v5h5"/><line x1="9" y1="13" x2="9" y2="18"/><line x1="12" y1="11" x2="12" y2="18"/><line x1="15" y1="15" x2="15" y2="18"/></svg>Descargar Excel de mi equipo</button>
       </div>
       <div class="status no-print" id="searchStatus"></div>
       <div class="legend" id="legend"></div>
@@ -560,7 +631,7 @@
         </div>
         <div class="field">
           <label for="ticketNumber">Número de ticket</label>
-          <input type="text" id="ticketNumber" placeholder="Ej. 26-200-000000" autocomplete="off" required>
+          <input type="text" id="ticketNumber" placeholder="Ej. TCK-0001" autocomplete="off" required>
         </div>
         <div class="field" id="leaderField" style="display:none; position:relative;">
           <label for="leaderSearchInput">¿Quién es tu líder?</label>
@@ -582,6 +653,14 @@
       </form>
     </div>
 
+    <div class="modal-overlay no-print" id="levelSummaryOverlay" style="display:none;">
+      <div class="modal-box">
+        <button type="button" class="modal-close" id="closeLevelSummaryBtn" aria-label="Cerrar"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+        <h2 id="levelSummaryTitle">Resumen por línea</h2>
+        <div id="levelSummary"></div>
+      </div>
+    </div>
+
     <footer class="no-print">Los registros se comparten entre todas las personas que abran esta página. La vista de "quién eres" es solo un filtro visual en este dispositivo, no una contraseña real de acceso.</footer>
 
     <button type="button" id="goAdminBtn" class="discreet-link no-print">Configuración y acceso de administrador</button>
@@ -596,7 +675,7 @@
       <h2>Edición protegida</h2>
       <div class="hint">Para registrar personas, cargar el Excel de puntos o vaciar datos necesitas la contraseña.</div>
       <div class="lock-status" id="lockStatusRow">
-        <span class="lock-badge locked" id="lockBadge">🔒 Solo lectura</span>
+        <span class="lock-badge locked" id="lockBadge"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Solo lectura</span>
       </div>
       <div id="unlockForm" style="margin-top:14px;">
         <div class="viewer-row">
@@ -604,7 +683,7 @@
             <label for="pwInput">Contraseña</label>
             <div style="display:flex; gap:6px;">
               <input type="password" id="pwInput" placeholder="••••••••" autocomplete="off" style="flex:1;">
-              <button type="button" id="togglePwBtn" class="secondary" style="padding:8px 12px;">👁</button>
+              <button type="button" id="togglePwBtn" class="secondary" style="padding:8px 12px;"><svg class="icon icon-tight" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
           </div>
           <button type="button" id="unlockBtn">Desbloquear</button>
@@ -631,7 +710,7 @@
       <h2>Importar / exportar equipo</h2>
       <div class="hint">Descarga la plantilla, llénala fuera de línea con todo tu equipo y luego impórtala aquí para armar el árbol de un jalón, en vez de registrar a cada persona a mano. También puedes exportar el árbol actual como respaldo.</div>
       <div class="xlsx-status-row">
-        <span class="xlsx-badge" id="xlsxBadge">⏳ Cargando función de Excel...</span>
+        <span class="xlsx-badge" id="xlsxBadge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Cargando función de Excel...</span>
         <button type="button" id="xlsxRetryBtn" class="secondary" style="display:none; padding:6px 12px; font-size:11px;">Reintentar</button>
       </div>
       <div class="viewer-row">
@@ -669,6 +748,16 @@
           <label class="period-choice">
             <input type="radio" name="pointsPeriodChoice" id="periodChoice2" value="2">
             <span>Periodo 2</span>
+          </label>
+        </div>
+        <div class="period-choice-row">
+          <label class="period-choice">
+            <input type="radio" name="pointsLoadMode" id="pointsModeReplace" value="replace" checked>
+            <span>Reemplazar total</span>
+          </label>
+          <label class="period-choice">
+            <input type="radio" name="pointsLoadMode" id="pointsModeAdd" value="add">
+            <span>Sumar como parcial (ya tenía puntos cargados)</span>
           </label>
         </div>
         <div class="viewer-row">
@@ -721,9 +810,61 @@ try{
   console.error('No se pudo inicializar Firebase', e);
 }
 const ARBOL_COLLECTION = 'arbolEquipo';
-let members = []; // { id, fullName, leaderId, joinedAt, firstPurchaseAt, pointsMonthKey, pointsP1, pointsP2 }
+let members = []; // { id, fullName, leaderId, joinedAt, firstPurchaseAt, pointsHistory: {monthKey: {p1, p2}} }
 let viewerId = null;
 let unlocked = false;
+let selectedMonthKey = null;
+
+function getMemberMonthPoints(member, monthKey){
+  if(member.pointsHistory && member.pointsHistory[monthKey]){
+    return member.pointsHistory[monthKey];
+  }
+  if(member.pointsMonthKey && member.pointsMonthKey === monthKey){
+    return {p1: member.pointsP1 != null ? member.pointsP1 : null, p2: member.pointsP2 != null ? member.pointsP2 : null};
+  }
+  return null;
+}
+
+function setMemberMonthPoints(member, monthKey, p1, p2){
+  if(!member.pointsHistory) member.pointsHistory = {};
+  member.pointsHistory[monthKey] = {p1, p2};
+}
+
+function migrateLegacyPoints(member){
+  if(member.pointsMonthKey && (!member.pointsHistory || !member.pointsHistory[member.pointsMonthKey])){
+    if(!member.pointsHistory) member.pointsHistory = {};
+    member.pointsHistory[member.pointsMonthKey] = {
+      p1: member.pointsP1 != null ? member.pointsP1 : null,
+      p2: member.pointsP2 != null ? member.pointsP2 : null
+    };
+  }
+}
+
+function monthKeyLabel(monthKey){
+  const [y, m] = monthKey.split('-').map(Number);
+  const name = MESES_LARGO[m - 1] || monthKey;
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${y}`;
+}
+
+function collectAvailableMonths(){
+  const set = new Set();
+  set.add(getPeriodInfo().monthKey);
+  members.forEach(m => {
+    if(m.pointsHistory) Object.keys(m.pointsHistory).forEach(k => set.add(k));
+    if(m.pointsMonthKey) set.add(m.pointsMonthKey);
+  });
+  return Array.from(set).sort().reverse();
+}
+
+function updateMonthSelect(){
+  const sel = document.getElementById('monthSelect');
+  if(!sel) return;
+  const months = collectAvailableMonths();
+  if(!selectedMonthKey || !months.includes(selectedMonthKey)){
+    selectedMonthKey = getPeriodInfo().monthKey;
+  }
+  sel.innerHTML = months.map(mk => `<option value="${mk}" ${mk === selectedMonthKey ? 'selected' : ''}>${monthKeyLabel(mk)}</option>`).join('');
+}
 
 function uid(){ return 'm' + Math.random().toString(36).slice(2, 10); }
 
@@ -814,13 +955,13 @@ function updateLockUI(){
   importHint.style.display = unlocked ? 'none' : 'block';
 
   if(unlocked){
-    badge.textContent = '🔓 Edición desbloqueada';
+    badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/></svg>Edición desbloqueada';
     badge.className = 'lock-badge unlocked';
     lockBtn.style.display = '';
     unlockBtn.style.display = 'none';
     pwInput.style.display = 'none';
   }else{
-    badge.textContent = '🔒 Solo lectura';
+    badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Solo lectura';
     badge.className = 'lock-badge locked';
     lockBtn.style.display = 'none';
     unlockBtn.style.display = '';
@@ -899,7 +1040,7 @@ function buildMembersFromRows(rows){
     const p1raw = p1Key ? row[p1Key] : '';
     const p2raw = p2Key ? row[p2Key] : '';
     const hasPoints = (p1raw !== '' && p1raw != null) || (p2raw !== '' && p2raw != null);
-    newMembers.push({
+    const newMember = {
       id,
       fullName,
       clientCode: cleanCodeValue(codeKey ? row[codeKey] : ''),
@@ -908,10 +1049,15 @@ function buildMembersFromRows(rows){
       _leaderNameRaw: leaderKey ? String(row[leaderKey] || '').trim() : '',
       joinedAt,
       firstPurchaseAt: firstPurchaseAt || null,
-      pointsMonthKey: hasPoints ? info.monthKey : null,
-      pointsP1: (p1raw === '' || p1raw == null) ? null : Number(p1raw),
-      pointsP2: (p2raw === '' || p2raw == null) ? null : Number(p2raw)
-    });
+      pointsHistory: {}
+    };
+    if(hasPoints){
+      setMemberMonthPoints(newMember, info.monthKey,
+        (p1raw === '' || p1raw == null) ? null : Number(p1raw),
+        (p2raw === '' || p2raw == null) ? null : Number(p2raw)
+      );
+    }
+    newMembers.push(newMember);
     byNameLower.set(normalizeNameForMatch(fullName), id);
   });
 
@@ -934,9 +1080,9 @@ function downloadTemplate(){
     return;
   }
   const data = [
-    {'Nombre completo': 'Ana Pérez', 'Membresía': 'MW25001', 'Número de ticket': 'TCK-0001', 'Líder (nombre completo)': '', 'Fecha en que se integra': '2026-01-15', 'Fecha de primera compra': '', 'Puntos Periodo 1': 0, 'Puntos Periodo 2': 0},
-    {'Nombre completo': 'Beatriz López', 'Membresía': '(MW25002)', 'Número de ticket': 'TCK-0002', 'Líder (nombre completo)': 'Ana Pérez', 'Fecha en que se integra': '2026-02-01', 'Fecha de primera compra': '2026-02-10', 'Puntos Periodo 1': 120, 'Puntos Periodo 2': 0},
-    {'Nombre completo': 'Carla Ruiz', 'Membresía': 'MW25003', 'Número de ticket': 'TCK-0003', 'Líder (nombre completo)': 'Beatriz López', 'Fecha en que se integra': '2026-03-05', 'Fecha de primera compra': '', 'Puntos Periodo 1': 0, 'Puntos Periodo 2': 0}
+    {'Nombre completo': 'Ana Pérez', 'Membresía': 'MW25001', 'Número de ticket': 'TCK-0001', 'Líder (nombre completo)': '', 'Fecha en que se integra': '2026-01-15', 'Fecha de primera compra': '', 'Puntos Periodo 1': '', 'Puntos Periodo 2': ''},
+    {'Nombre completo': 'Beatriz López', 'Membresía': '(MW25002)', 'Número de ticket': 'TCK-0002', 'Líder (nombre completo)': 'Ana Pérez', 'Fecha en que se integra': '2026-02-01', 'Fecha de primera compra': '2026-02-10', 'Puntos Periodo 1': 120, 'Puntos Periodo 2': ''},
+    {'Nombre completo': 'Carla Ruiz', 'Membresía': 'MW25003', 'Número de ticket': 'TCK-0003', 'Líder (nombre completo)': 'Beatriz López', 'Fecha en que se integra': '2026-03-05', 'Fecha de primera compra': '', 'Puntos Periodo 1': '', 'Puntos Periodo 2': ''}
   ];
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [{wch:24},{wch:12},{wch:14},{wch:24},{wch:20},{wch:20},{wch:14},{wch:14}];
@@ -956,16 +1102,19 @@ function exportTree(){
   }
   const byId = {};
   members.forEach(m => byId[m.id] = m);
-  const data = members.map(m => ({
-    'Nombre completo': m.fullName,
-    'Membresía': m.clientCode || '',
-    'Número de ticket': m.ticketNumber || '',
-    'Líder (nombre completo)': m.leaderId && byId[m.leaderId] ? byId[m.leaderId].fullName : '',
-    'Fecha en que se integra': m.joinedAt || '',
-    'Fecha de primera compra': m.firstPurchaseAt || '',
-    'Puntos Periodo 1': m.pointsP1 != null && m.pointsP1 !== '' ? Number(m.pointsP1) : 0,
-    'Puntos Periodo 2': m.pointsP2 != null && m.pointsP2 !== '' ? Number(m.pointsP2) : 0
-  }));
+  const data = members.map(m => {
+    const pts = getMemberMonthPoints(m, selectedMonthKey);
+    return {
+      'Nombre completo': m.fullName,
+      'Membresía': m.clientCode || '',
+      'Número de ticket': m.ticketNumber || '',
+      'Líder (nombre completo)': m.leaderId && byId[m.leaderId] ? byId[m.leaderId].fullName : '',
+      'Fecha en que se integra': m.joinedAt || '',
+      'Fecha de primera compra': m.firstPurchaseAt || '',
+      'Puntos Periodo 1': pts && pts.p1 != null ? pts.p1 : '',
+      'Puntos Periodo 2': pts && pts.p2 != null ? pts.p2 : ''
+    };
+  });
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [{wch:24},{wch:12},{wch:14},{wch:24},{wch:20},{wch:20},{wch:14},{wch:14}];
   const wb = XLSX.utils.book_new();
@@ -981,15 +1130,15 @@ function updateXlsxBadge(){
   const retryBtn = document.getElementById('xlsxRetryBtn');
   const state = window.__xlsxState;
   if(state === 'ready'){
-    badge.textContent = '✓ Excel listo';
+    badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>Excel listo';
     badge.className = 'xlsx-badge ready';
     retryBtn.style.display = 'none';
   }else if(state === 'error'){
-    badge.textContent = '✗ No se pudo cargar (sin internet o bloqueado)';
+    badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>No se pudo cargar (sin internet o bloqueado)';
     badge.className = 'xlsx-badge error';
     retryBtn.style.display = '';
   }else{
-    badge.textContent = '⏳ Cargando función de Excel...';
+    badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Cargando función de Excel...';
     badge.className = 'xlsx-badge';
     retryBtn.style.display = 'none';
   }
@@ -1347,6 +1496,7 @@ function buildTreeHtml(){
     count.textContent = '0';
     currentViewerLabel.textContent = 'Selecciona quién eres para ver tu equipo.';
     document.getElementById('legend').innerHTML = '';
+    document.getElementById('levelSummary').innerHTML = '';
     container.innerHTML = '<div class="empty"><strong>El árbol está vacío</strong>Registra a la líder principal para empezar.</div>';
     return;
   }
@@ -1355,6 +1505,7 @@ function buildTreeHtml(){
     count.textContent = '0';
     currentViewerLabel.textContent = 'Selecciona quién eres para ver tu equipo.';
     document.getElementById('legend').innerHTML = '';
+    document.getElementById('levelSummary').innerHTML = '';
     container.innerHTML = '<div class="empty"><strong>Elige tu nombre arriba</strong>Así solo verás tu equipo hacia abajo, sin ver quién está por encima.</div>';
     return;
   }
@@ -1381,10 +1532,10 @@ function buildTreeHtml(){
     if(node.joinedAt) dates.push(`Se integró: ${fmtDate(node.joinedAt)}`);
     if(node.firstPurchaseAt) dates.push(`1ª compra: ${fmtDate(node.firstPurchaseAt)}`);
 
-    const info = getPeriodInfo();
-    if(node.pointsMonthKey === info.monthKey && (node.pointsP1 != null || node.pointsP2 != null)){
-      const p1 = node.pointsP1 != null ? node.pointsP1 : '—';
-      const p2 = node.pointsP2 != null ? node.pointsP2 : '—';
+    const monthPts = getMemberMonthPoints(node, selectedMonthKey);
+    if(monthPts && (monthPts.p1 != null || monthPts.p2 != null)){
+      const p1 = monthPts.p1 != null ? monthPts.p1 : '—';
+      const p2 = monthPts.p2 != null ? monthPts.p2 : '—';
       dates.push(`<span class="points-line">Pts P1: ${p1} · P2: ${p2}</span>`);
     }else{
       dates.push(`Puntos: sin datos este periodo`);
@@ -1420,24 +1571,106 @@ function buildTreeHtml(){
     legendHtml += `<span><i class="${cls}"></i>${label}</span>`;
   }
   legend.innerHTML = legendHtml;
+
+  renderLevelSummary(viewerId);
 }
+
+function renderLevelSummary(rootId){
+  const container = document.getElementById('levelSummary');
+  const titleEl = document.getElementById('levelSummaryTitle');
+  const viewer = members.find(m => m.id === rootId);
+  titleEl.textContent = viewer ? `Resumen por línea — ${viewer.fullName} (${monthKeyLabel(selectedMonthKey)})` : 'Resumen por línea';
+
+  const depthById = subtreeWithDepth(rootId);
+
+  const byLevel = {};
+  Object.keys(depthById).forEach(id => {
+    const d = depthById[id];
+    if(d === 0) return;
+    if(!byLevel[d]) byLevel[d] = [];
+    const m = members.find(x => x.id === id);
+    if(m) byLevel[d].push(m);
+  });
+
+  const levels = Object.keys(byLevel).map(Number).sort((a, b) => a - b);
+  if(levels.length === 0){
+    container.innerHTML = `<div class="hint">Todavía no hay nadie en líneas debajo de esta persona.</div>`;
+    return;
+  }
+
+  container.innerHTML = levels.map(d => {
+    const list = byLevel[d].slice().sort((a, b) => a.fullName.localeCompare(b.fullName));
+    const colorClass = `level-color-${((d - 1) % 12) + 1}`;
+
+    const personCards = list.map(m => {
+      const pts = getMemberMonthPoints(m, selectedMonthKey);
+      const p1 = pts && pts.p1 != null ? pts.p1 : 0;
+      const p2 = pts && pts.p2 != null ? pts.p2 : 0;
+      return `
+        <div class="person-card">
+          <div class="pc-name">${escapeHtml(m.fullName)}</div>
+          <div class="pc-points">
+            <div>P1<b>${p1}</b></div>
+            <div>P2<b>${p2}</b></div>
+            <div class="pc-total">Total<b>${p1 + p2}</b></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const levelTotal = list.reduce((sum, m) => {
+      const pts = getMemberMonthPoints(m, selectedMonthKey);
+      const p1 = pts && pts.p1 != null ? pts.p1 : 0;
+      const p2 = pts && pts.p2 != null ? pts.p2 : 0;
+      return sum + p1 + p2;
+    }, 0);
+
+    return `
+      <details class="level-block" ${d === 1 ? 'open' : ''}>
+        <summary class="${colorClass}">
+          <span class="lb-title"><span class="lb-arrow">▶</span> Línea ${d}</span>
+          <span class="lb-stats">
+            <span><b>${list.length}</b>persona(s)</span>
+            <span><b>${levelTotal}</b>pts total</span>
+          </span>
+        </summary>
+        <div class="lb-body">${personCards}</div>
+      </details>`;
+  }).join('');
+}
+
+document.getElementById('openLevelSummaryBtn').addEventListener('click', () => {
+  if(!viewerId || !members.some(m => m.id === viewerId)){
+    setSearchStatus('Elige primero quién eres arriba para ver el resumen por línea.', true);
+    return;
+  }
+  renderLevelSummary(viewerId);
+  document.getElementById('levelSummaryOverlay').style.display = 'flex';
+});
+document.getElementById('closeLevelSummaryBtn').addEventListener('click', () => {
+  document.getElementById('levelSummaryOverlay').style.display = 'none';
+});
+document.getElementById('levelSummaryOverlay').addEventListener('click', (e) => {
+  if(e.target.id === 'levelSummaryOverlay'){
+    document.getElementById('levelSummaryOverlay').style.display = 'none';
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    document.getElementById('levelSummaryOverlay').style.display = 'none';
+  }
+});
 
 function render(){
   updateFormMode();
   updateViewerSelect();
+  updateMonthSelect();
   buildTreeHtml();
 }
 
 let usingLocalFallback = false;
 
 async function storageGet(key, shared){
-  // Si se abre dentro de Claude, usa su almacenamiento nativo (útil para probar)
-  if(window.storage && typeof window.storage.get === 'function'){
-    try{
-      return await window.storage.get(key, shared);
-    }catch(e){ /* sigue con el siguiente método */ }
-  }
-  // Datos compartidos (el árbol): Firestore, para que todas vean lo mismo en vivo
+  // Datos compartidos (el árbol): Firestore, para que todas vean lo mismo
   if(shared && db){
     try{
       const snap = await db.collection(ARBOL_COLLECTION).doc(key).get();
@@ -1461,12 +1694,6 @@ async function storageGet(key, shared){
 }
 
 async function storageSet(key, value, shared){
-  if(window.storage && typeof window.storage.set === 'function'){
-    try{
-      const result = await window.storage.set(key, value, shared);
-      if(result) return result;
-    }catch(e){ /* sigue con el siguiente método */ }
-  }
   if(shared && db){
     try{
       await db.collection(ARBOL_COLLECTION).doc(key).set({
@@ -1495,6 +1722,7 @@ async function loadMembers(){
   }catch(e){
     members = [];
   }
+  members.forEach(migrateLegacyPoints);
   try{
     const v = await storageGet(VIEWER_KEY, false);
     viewerId = v ? v.value : null;
@@ -1722,109 +1950,14 @@ document.getElementById('zoomOutBtn').addEventListener('click', () => {
   zoomLevel = Math.max(0.3, Math.round((zoomLevel - 0.1) * 100) / 100);
   applyZoom();
 });
+document.getElementById('monthSelect').addEventListener('change', (e) => {
+  selectedMonthKey = e.target.value;
+  buildTreeHtml();
+});
+
 document.getElementById('zoomResetBtn').addEventListener('click', () => {
   zoomLevel = 1;
   applyZoom();
-});
-
-document.getElementById('printTreeBtn').addEventListener('click', () => {
-  if(!viewerId || !members.some(m => m.id === viewerId)){
-    setSearchStatus('Elige primero quién eres arriba para poder imprimir tu equipo.', true);
-    return;
-  }
-  const viewer = members.find(m => m.id === viewerId);
-  const count = subtreeIds(viewerId).size - 1;
-  const today = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
-  document.getElementById('printOnlyHeader').innerHTML = `
-    <div class="pt-title">Equipo de ${escapeHtml(viewer.fullName)}</div>
-    <div class="pt-meta">${count} persona(s) en su equipo · Generado el ${today}</div>
-  `;
-
-  const savedZoom = zoomLevel;
-  zoomLevel = 1;
-  applyZoom();
-
-  const restoreZoom = () => {
-    zoomLevel = savedZoom;
-    applyZoom();
-    window.removeEventListener('afterprint', restoreZoom);
-  };
-  window.addEventListener('afterprint', restoreZoom);
-
-  setTimeout(() => window.print(), 50);
-});
-
-document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
-  if(!viewerId || !members.some(m => m.id === viewerId)){
-    setSearchStatus('Elige primero quién eres arriba para poder descargar tu equipo.', true);
-    return;
-  }
-  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
-    setSearchStatus('Todavía está cargando la función de PDF. Espera unos segundos y vuelve a intentar (necesita internet).', true);
-    return;
-  }
-
-  const btn = document.getElementById('downloadPdfBtn');
-  const originalLabel = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Generando PDF...';
-
-  const viewer = members.find(m => m.id === viewerId);
-  const count = subtreeIds(viewerId).size - 1;
-  const today = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
-  document.getElementById('printOnlyHeader').innerHTML = `
-    <div class="pt-title">Equipo de ${escapeHtml(viewer.fullName)}</div>
-    <div class="pt-meta">${count} persona(s) en su equipo · Generado el ${today}</div>
-  `;
-
-  const viewport = document.getElementById('treeViewport');
-  const oldMaxHeight = viewport.style.maxHeight;
-  const oldOverflow = viewport.style.overflow;
-  const savedZoom = zoomLevel;
-  viewport.style.maxHeight = 'none';
-  viewport.style.overflow = 'visible';
-  zoomLevel = 1;
-  applyZoom();
-
-  await new Promise(r => setTimeout(r, 80));
-
-  try{
-    const naturalWidth = viewport.scrollWidth;
-    const naturalHeight = viewport.scrollHeight;
-    const maxDim = 14000;
-    let scale = 2;
-    const projected = Math.max(naturalWidth, naturalHeight) * scale;
-    if(projected > maxDim){
-      scale = Math.max(0.15, Math.floor((maxDim / Math.max(naturalWidth, naturalHeight)) * 20) / 20);
-    }
-
-    const canvas = await html2canvas(viewport, {
-      scale,
-      backgroundColor: '#ffffff',
-      useCORS: true
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: canvas.width >= canvas.height ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: [canvas.width, canvas.height]
-    });
-    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-    const safeName = viewer.fullName.replace(/[^\p{L}\p{N}]+/gu, '-');
-    pdf.save(`arbol-${safeName}.pdf`);
-    setSearchStatus('PDF descargado.', false);
-  }catch(err){
-    setSearchStatus('No se pudo generar el PDF. Intenta de nuevo.', true);
-  }
-
-  viewport.style.maxHeight = oldMaxHeight;
-  viewport.style.overflow = oldOverflow;
-  zoomLevel = savedZoom;
-  applyZoom();
-  btn.disabled = false;
-  btn.textContent = originalLabel;
 });
 
 document.getElementById('downloadTreeExcelBtn').addEventListener('click', () => {
@@ -1839,31 +1972,31 @@ document.getElementById('downloadTreeExcelBtn').addEventListener('click', () => 
 
   const viewer = members.find(m => m.id === viewerId);
   const depthById = subtreeWithDepth(viewerId);
-  const info = getPeriodInfo();
 
   const rows = members
     .filter(m => depthById.hasOwnProperty(m.id) && m.id !== viewerId)
     .sort((a, b) => (depthById[a.id] - depthById[b.id]) || a.fullName.localeCompare(b.fullName))
     .map(m => {
-      const hasPoints = m.pointsMonthKey === info.monthKey;
-      const p1 = hasPoints && m.pointsP1 != null ? m.pointsP1 : 0;
-      const p2 = hasPoints && m.pointsP2 != null ? m.pointsP2 : 0;
+      const pts = getMemberMonthPoints(m, selectedMonthKey);
+      const p1 = pts && pts.p1 != null ? pts.p1 : 0;
+      const p2 = pts && pts.p2 != null ? pts.p2 : 0;
       return {
         'Nombre completo': m.fullName,
         'Línea': `Línea ${depthById[m.id]}`,
-        'Puntos Periodo 1': hasPoints && m.pointsP1 != null ? m.pointsP1 : '',
-        'Puntos Periodo 2': hasPoints && m.pointsP2 != null ? m.pointsP2 : '',
+        'Puntos Periodo 1': p1,
+        'Puntos Periodo 2': p2,
         'Total': p1 + p2
       };
     });
 
-  const totalP1 = rows.reduce((sum, r) => sum + (typeof r['Puntos Periodo 1'] === 'number' ? r['Puntos Periodo 1'] : 0), 0);
-  const totalP2 = rows.reduce((sum, r) => sum + (typeof r['Puntos Periodo 2'] === 'number' ? r['Puntos Periodo 2'] : 0), 0);
+  const totalP1 = rows.reduce((sum, r) => sum + r['Puntos Periodo 1'], 0);
+  const totalP2 = rows.reduce((sum, r) => sum + r['Puntos Periodo 2'], 0);
   const totalAll = rows.reduce((sum, r) => sum + r['Total'], 0);
 
   const today = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
   const aoa = [
     ['Líder', viewer.fullName],
+    ['Mes consultado', monthKeyLabel(selectedMonthKey)],
     ['Generado', today],
     ['Personas en el equipo', rows.length],
     [],
@@ -1878,7 +2011,7 @@ document.getElementById('downloadTreeExcelBtn').addEventListener('click', () => 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Equipo');
   const safeName = viewer.fullName.replace(/[^\p{L}\p{N}]+/gu, '-');
-  XLSX.writeFile(wb, `equipo-${safeName}.xlsx`);
+  XLSX.writeFile(wb, `equipo-${safeName}-${selectedMonthKey}.xlsx`);
 });
 
 let currentMatches = [];
@@ -2003,6 +2136,7 @@ function normalizeNameForMatch(s){
 
 let pointsPreviewRows = null;
 let pointsPreviewTargetPeriod = null;
+let pointsPreviewAddMode = false;
 
 document.getElementById('excelInput').addEventListener('change', async (e) => {
   if(!unlocked) return;
@@ -2014,6 +2148,7 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
     return;
   }
   const targetPeriod = Number(periodChoice.value);
+  const addMode = document.getElementById('pointsModeAdd').checked;
 
   if(typeof XLSX === 'undefined'){
     if(window.__xlsxState === 'error'){
@@ -2048,16 +2183,25 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
       return;
     }
 
+    const info = getPeriodInfo();
     pointsPreviewTargetPeriod = targetPeriod;
+    pointsPreviewAddMode = addMode;
     pointsPreviewRows = rows
       .map(row => {
         const excelName = String(row[nameKey] || '').trim();
         if(!excelName) return null;
         const raw = pointsKey ? row[pointsKey] : '';
         const member = members.find(m => normalizeNameForMatch(m.fullName) === normalizeNameForMatch(excelName));
+        let existing = 0;
+        if(member){
+          const pts = getMemberMonthPoints(member, info.monthKey);
+          const cur = pts ? (targetPeriod === 1 ? pts.p1 : pts.p2) : null;
+          existing = cur != null ? cur : 0;
+        }
         return {
           excelName,
           memberId: member ? member.id : '',
+          existing,
           points: (raw === '' || raw == null) ? '' : Number(raw),
           ignored: false
         };
@@ -2065,7 +2209,8 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
       .filter(Boolean);
 
     renderPointsPreview();
-    setExcelStatus(`Revisa la vista previa abajo antes de confirmar (Periodo ${targetPeriod}).`, false);
+    const modeLabel = addMode ? 'sumando a lo que ya tenían' : 'reemplazando el total';
+    setExcelStatus(`Revisa la vista previa abajo antes de confirmar (Periodo ${targetPeriod}, ${modeLabel}).`, false);
   }catch(err){
     setExcelStatus('No pude leer ese archivo. Verifica que sea un Excel válido.', true);
   }
@@ -2092,7 +2237,9 @@ function renderPointsPreview(){
     const rowClass = r.ignored ? 'row-ignored' : (isUnmatched ? 'row-unmatched' : '');
     const statusHtml = r.ignored
       ? `<span class="excel-name">Ignorada</span>`
-      : (isUnmatched ? `<span class="status-bad">Sin coincidir</span>` : `<span class="status-ok">Coincide ✓</span>`);
+      : (isUnmatched ? `<span class="status-bad">Sin coincidir</span>` : `<span class="status-ok"><svg class="icon icon-tight" viewBox="0 0 24 24" style="width:12px;height:12px;"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg> Coincide</span>`);
+    const newVal = r.points === '' ? 0 : Number(r.points);
+    const result = pointsPreviewAddMode ? (r.existing + newVal) : newVal;
     return `
       <tr class="${rowClass}" data-idx="${idx}">
         <td>
@@ -2102,7 +2249,9 @@ function renderPointsPreview(){
         <td>
           <select class="preview-member-select" data-idx="${idx}">${memberOptionsHtml(r.memberId)}</select>
         </td>
+        ${pointsPreviewAddMode ? `<td class="preview-existing">${r.existing}</td>` : ''}
         <td><input type="number" class="preview-points" data-idx="${idx}" value="${r.points}" placeholder="—"></td>
+        ${pointsPreviewAddMode ? `<td class="preview-result" data-result-idx="${idx}"><b>${result}</b></td>` : ''}
       </tr>`;
   }).join('');
 
@@ -2111,7 +2260,9 @@ function renderPointsPreview(){
       <tr>
         <th>Nombre en el Excel</th>
         <th>Persona en el árbol</th>
-        <th>Puntos (Periodo ${pointsPreviewTargetPeriod})</th>
+        ${pointsPreviewAddMode ? `<th>Actual</th>` : ''}
+        <th>${pointsPreviewAddMode ? 'A sumar' : 'Nuevo total'} (Periodo ${pointsPreviewTargetPeriod})</th>
+        ${pointsPreviewAddMode ? `<th>Resultado</th>` : ''}
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
@@ -2122,6 +2273,15 @@ function renderPointsPreview(){
       const idx = Number(el.dataset.idx);
       pointsPreviewRows[idx].memberId = el.value;
       pointsPreviewRows[idx].ignored = false;
+      const info = getPeriodInfo();
+      const member = members.find(m => m.id === el.value);
+      let existing = 0;
+      if(member){
+        const pts = getMemberMonthPoints(member, info.monthKey);
+        const cur = pts ? (pointsPreviewTargetPeriod === 1 ? pts.p1 : pts.p2) : null;
+        existing = cur != null ? cur : 0;
+      }
+      pointsPreviewRows[idx].existing = existing;
       renderPointsPreview();
     });
   });
@@ -2129,6 +2289,13 @@ function renderPointsPreview(){
     el.addEventListener('input', () => {
       const idx = Number(el.dataset.idx);
       pointsPreviewRows[idx].points = el.value === '' ? '' : Number(el.value);
+      if(pointsPreviewAddMode){
+        const resultCell = table.querySelector(`.preview-result[data-result-idx="${idx}"] b`);
+        if(resultCell){
+          const newVal = pointsPreviewRows[idx].points === '' ? 0 : Number(pointsPreviewRows[idx].points);
+          resultCell.textContent = pointsPreviewRows[idx].existing + newVal;
+        }
+      }
     });
   });
 
@@ -2138,6 +2305,7 @@ function renderPointsPreview(){
 document.getElementById('cancelPointsBtn').addEventListener('click', () => {
   pointsPreviewRows = null;
   pointsPreviewTargetPeriod = null;
+  pointsPreviewAddMode = false;
   document.getElementById('pointsPreviewWrap').style.display = 'none';
   setExcelStatus('Carga cancelada.', false);
 });
@@ -2153,17 +2321,12 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
     const member = members.find(m => m.id === r.memberId);
     if(!member){ skipped.push(r.excelName); return; }
 
-    if(member.pointsMonthKey !== info.monthKey){
-      member.pointsMonthKey = info.monthKey;
-      member.pointsP1 = null;
-      member.pointsP2 = null;
-    }
-    const value = r.points === '' ? null : Number(r.points);
-    if(pointsPreviewTargetPeriod === 1){
-      member.pointsP1 = value;
-    }else{
-      member.pointsP2 = value;
-    }
+    const existing = getMemberMonthPoints(member, info.monthKey) || {p1: null, p2: null};
+    const enteredVal = r.points === '' ? 0 : Number(r.points);
+    const targetValue = pointsPreviewAddMode ? (r.existing + enteredVal) : (r.points === '' ? null : enteredVal);
+    const newP1 = pointsPreviewTargetPeriod === 1 ? targetValue : existing.p1;
+    const newP2 = pointsPreviewTargetPeriod === 2 ? targetValue : existing.p2;
+    setMemberMonthPoints(member, info.monthKey, newP1, newP2);
     matched++;
   });
 
@@ -2174,11 +2337,13 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
   const ok = await saveMembers();
   if(ok){
     render();
-    let msg = `Se cargaron puntos del Periodo ${pointsPreviewTargetPeriod} para ${matched} persona(s).`;
+    const modeWord = pointsPreviewAddMode ? 'sumaron' : 'cargaron';
+    let msg = `Se ${modeWord} puntos del Periodo ${pointsPreviewTargetPeriod} para ${matched} persona(s).`;
     if(skipped.length) msg += ` Se ignoraron ${skipped.length} fila(s) sin persona asignada.`;
     setExcelStatus(msg, skipped.length > 0);
     pointsPreviewRows = null;
     pointsPreviewTargetPeriod = null;
+    pointsPreviewAddMode = false;
     document.getElementById('pointsPreviewWrap').style.display = 'none';
   }else{
     setExcelStatus('No se pudieron guardar los puntos. Intenta de nuevo.', true);
@@ -2194,13 +2359,23 @@ function setToolsStatus(msg, isErr){
 
 document.getElementById('clearPointsBtn').addEventListener('click', async () => {
   if(!unlocked) return;
-  const ok = confirm('Esto borrará los puntos cargados de todas las personas. ¿Continuar?');
+  const monthLabel = monthKeyLabel(selectedMonthKey);
+  const ok = confirm(`Esto borrará los puntos de ${monthLabel} de todas las personas (los demás meses no se tocan). ¿Continuar?`);
   if(!ok) return;
-  members.forEach(m => { m.pointsMonthKey = null; m.pointsP1 = null; m.pointsP2 = null; });
+  members.forEach(m => {
+    if(m.pointsHistory && m.pointsHistory[selectedMonthKey]){
+      delete m.pointsHistory[selectedMonthKey];
+    }
+    if(m.pointsMonthKey === selectedMonthKey){
+      m.pointsMonthKey = null;
+      m.pointsP1 = null;
+      m.pointsP2 = null;
+    }
+  });
   const saved = await saveMembers();
   if(saved){
     render();
-    setExcelStatus('Puntos borrados.', false);
+    setExcelStatus(`Puntos de ${monthLabel} borrados.`, false);
   }else{
     setExcelStatus('No se pudo guardar. Intenta de nuevo.', true);
   }
