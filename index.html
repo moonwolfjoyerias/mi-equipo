@@ -364,6 +364,8 @@
   .legend i.lvl-12{background:#5C6B73;}
 
   .xlsx-status-row{display:flex; align-items:center; gap:10px; margin:4px 0 14px; flex-wrap:wrap;}
+  .last-updated-note{font-size:11px; color:var(--muted); margin:4px 0 14px;}
+  .last-updated-note strong{color:var(--lilac-deep); font-weight:700;}
   .xlsx-badge{font-size:11px; font-weight:600; padding:5px 10px; border-radius:14px; background:#F3E9F9; color:var(--lilac-deep); display:inline-flex; align-items:center;}
   .xlsx-badge.ready{background:#DFF4E8; color:#227A4E;}
   .xlsx-badge.error{background:#FBDDD9; color:var(--danger);}
@@ -572,6 +574,13 @@
         </div>
         <button type="button" id="viewBtn">Ver mi equipo</button>
       </div>
+      <div class="viewer-row" id="viewerPasswordField" style="display:none; margin-top:10px;">
+        <div class="field">
+          <label for="viewerAccessPassword">Contraseña de acceso</label>
+          <input type="password" id="viewerAccessPassword" placeholder="••••••••" autocomplete="off">
+        </div>
+        <button type="button" id="viewerAccessSubmitBtn">Entrar</button>
+      </div>
       <div class="status" id="viewerSearchStatus"></div>
     </div>
 
@@ -694,6 +703,57 @@
     </div>
 
     <div class="card">
+      <h2>Contraseñas de acceso al árbol</h2>
+      <div class="hint">Asigna una contraseña a cada persona para que pueda entrar a ver su equipo. Sin contraseña asignada, esa persona no podrá entrar (a menos que tú, como administrador, tengas la edición desbloqueada). Aquí también puedes ver la contraseña que ya tiene asignada, por si se le olvida.</div>
+      <div class="locked-hint" id="passwordsLockedHint">Desbloquea la edición arriba para asignar o ver contraseñas.</div>
+      <fieldset id="passwordsFieldset" disabled>
+        <div class="field" style="position:relative; max-width:340px;">
+          <label for="pwPersonSearch">Persona</label>
+          <input type="text" id="pwPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+          <div class="suggestions-list" id="pwPersonSuggestions" style="display:none;"></div>
+        </div>
+        <div class="viewer-row" id="pwEditRow" style="display:none; margin-top:14px;">
+          <div class="field">
+            <label id="pwPersonLabel" for="pwPersonPassword">Contraseña</label>
+            <input type="text" id="pwPersonPassword" placeholder="Sin contraseña asignada" autocomplete="off">
+          </div>
+          <button type="button" id="savePersonPasswordBtn">Guardar</button>
+          <button type="button" id="clearPersonPasswordBtn" class="secondary">Quitar</button>
+        </div>
+        <div class="status" id="pwPersonStatus"></div>
+      </fieldset>
+    </div>
+
+    <div class="card">
+      <h2>Cambiar líder de una persona</h2>
+      <div class="hint">Busca a la persona que quieres mover, y elige quién será su nuevo líder (o déjala sin líder, para que sea raíz del árbol). Todo su equipo hacia abajo se mueve con ella automáticamente.</div>
+      <div class="locked-hint" id="reassignLockedHint">Desbloquea la edición arriba para cambiar líderes.</div>
+      <fieldset id="reassignFieldset" disabled>
+        <div class="field" style="position:relative; max-width:340px;">
+          <label for="reassignPersonSearch">Persona a mover</label>
+          <input type="text" id="reassignPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+          <div class="suggestions-list" id="reassignPersonSuggestions" style="display:none;"></div>
+        </div>
+        <div id="reassignEditRow" style="display:none; margin-top:14px;">
+          <div class="hint" id="reassignCurrentLeader"></div>
+          <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; margin:12px 0; color:var(--ink);">
+            <input type="checkbox" id="reassignNoLeaderCheckbox">
+            Dejar sin líder (será raíz del árbol)
+          </label>
+          <div class="viewer-row">
+            <div class="field" style="position:relative;">
+              <label for="reassignNewLeaderSearch">Nuevo líder</label>
+              <input type="text" id="reassignNewLeaderSearch" placeholder="Escribe el nombre del nuevo líder..." autocomplete="off">
+              <div class="suggestions-list" id="reassignNewLeaderSuggestions" style="display:none;"></div>
+            </div>
+            <button type="button" id="saveReassignBtn">Guardar cambio</button>
+          </div>
+        </div>
+        <div class="status" id="reassignStatus"></div>
+      </fieldset>
+    </div>
+
+    <div class="card">
       <h2>Vista previa</h2>
       <div class="hint">Carga tu equipo completo (extraído de tu PDF) para ver cómo se ve la página llena.</div>
       <div class="locked-hint" id="toolsLockedHint">Desbloquea la edición arriba para usar estas herramientas.</div>
@@ -709,6 +769,7 @@
     <div class="card">
       <h2>Importar / exportar equipo</h2>
       <div class="hint">Descarga la plantilla, llénala fuera de línea con todo tu equipo y luego impórtala aquí para armar el árbol de un jalón, en vez de registrar a cada persona a mano. También puedes exportar el árbol actual como respaldo.</div>
+      <div class="last-updated-note">Última actualización del árbol: <strong id="treeLastUpdated">Sin registros todavía</strong></div>
       <div class="xlsx-status-row">
         <span class="xlsx-badge" id="xlsxBadge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Cargando función de Excel...</span>
         <button type="button" id="xlsxRetryBtn" class="secondary" style="display:none; padding:6px 12px; font-size:11px;">Reintentar</button>
@@ -739,6 +800,7 @@
     <div class="card">
       <h2>Puntos por periodo</h2>
       <div class="hint">Primero elige a qué periodo corresponden los puntos que vas a subir, luego elige el archivo Excel con las columnas "Nombre completo" y "Puntos". Antes de guardar te muestro una vista previa donde puedes corregir cualquier error.</div>
+      <div class="last-updated-note">Última actualización de puntos: <strong id="pointsLastUpdated">Sin registros todavía</strong></div>
       <fieldset id="excelFieldset" disabled>
         <div class="period-choice-row">
           <label class="period-choice">
@@ -791,6 +853,7 @@
 <script>
 const DATA_KEY = 'team-tree-v2';
 const VIEWER_KEY = 'team-tree-viewer';
+const META_KEY = 'team-tree-meta';
 const EDIT_PASSWORD = 'UNICORNIOMW34';
 
 // Mismo proyecto Firebase que la app de la Gala, colección separada para el árbol de equipo
@@ -810,6 +873,7 @@ try{
   console.error('No se pudo inicializar Firebase', e);
 }
 const ARBOL_COLLECTION = 'arbolEquipo';
+
 let members = []; // { id, fullName, leaderId, joinedAt, firstPurchaseAt, pointsHistory: {monthKey: {p1, p2}} }
 let viewerId = null;
 let unlocked = false;
@@ -820,23 +884,36 @@ function getMemberMonthPoints(member, monthKey){
     return member.pointsHistory[monthKey];
   }
   if(member.pointsMonthKey && member.pointsMonthKey === monthKey){
-    return {p1: member.pointsP1 != null ? member.pointsP1 : null, p2: member.pointsP2 != null ? member.pointsP2 : null};
+    return {p1: floorPts(member.pointsP1), p2: floorPts(member.pointsP2)};
   }
   return null;
 }
 
+function floorPts(n){
+  if(n === null || n === undefined || n === '') return null;
+  const num = Number(n);
+  if(isNaN(num)) return null;
+  return Math.floor(num);
+}
+
 function setMemberMonthPoints(member, monthKey, p1, p2){
   if(!member.pointsHistory) member.pointsHistory = {};
-  member.pointsHistory[monthKey] = {p1, p2};
+  member.pointsHistory[monthKey] = {p1: floorPts(p1), p2: floorPts(p2)};
 }
 
 function migrateLegacyPoints(member){
   if(member.pointsMonthKey && (!member.pointsHistory || !member.pointsHistory[member.pointsMonthKey])){
     if(!member.pointsHistory) member.pointsHistory = {};
     member.pointsHistory[member.pointsMonthKey] = {
-      p1: member.pointsP1 != null ? member.pointsP1 : null,
-      p2: member.pointsP2 != null ? member.pointsP2 : null
+      p1: floorPts(member.pointsP1),
+      p2: floorPts(member.pointsP2)
     };
+  }
+  if(member.pointsHistory){
+    Object.keys(member.pointsHistory).forEach(k => {
+      member.pointsHistory[k].p1 = floorPts(member.pointsHistory[k].p1);
+      member.pointsHistory[k].p2 = floorPts(member.pointsHistory[k].p2);
+    });
   }
 }
 
@@ -945,14 +1022,22 @@ function updateLockUI(){
   const toolsFieldset = document.getElementById('toolsFieldset');
   const excelFieldset = document.getElementById('excelFieldset');
   const importFieldset = document.getElementById('importFieldset');
+  const passwordsFieldset = document.getElementById('passwordsFieldset');
+  const reassignFieldset = document.getElementById('reassignFieldset');
   const toolsHint = document.getElementById('toolsLockedHint');
   const importHint = document.getElementById('importLockedHint');
+  const passwordsHint = document.getElementById('passwordsLockedHint');
+  const reassignHint = document.getElementById('reassignLockedHint');
 
   toolsFieldset.disabled = !unlocked;
   excelFieldset.disabled = !unlocked;
   importFieldset.disabled = !unlocked;
+  passwordsFieldset.disabled = !unlocked;
+  reassignFieldset.disabled = !unlocked;
   toolsHint.style.display = unlocked ? 'none' : 'block';
   importHint.style.display = unlocked ? 'none' : 'block';
+  passwordsHint.style.display = unlocked ? 'none' : 'block';
+  reassignHint.style.display = unlocked ? 'none' : 'block';
 
   if(unlocked){
     badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/></svg>Edición desbloqueada';
@@ -1273,6 +1358,7 @@ document.getElementById('confirmImportBtn').addEventListener('click', async () =
     const saved = await saveMembers();
     if(saved){
       await saveViewer(viewerId || '');
+      touchTreeUpdate();
       render();
       setImportProgress(100, 'Completado');
       let msg = `Se importaron ${members.length} persona(s).`;
@@ -1379,6 +1465,256 @@ document.addEventListener('click', (e) => {
   const wrap = document.getElementById('leaderSearchInput').closest('.field');
   if(wrap && !wrap.contains(e.target)){
     document.getElementById('leaderSuggestions').style.display = 'none';
+  }
+});
+
+function setPwPersonStatus(msg, isErr){
+  const el = document.getElementById('pwPersonStatus');
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+let selectedPwPersonId = null;
+
+function renderPwPersonSuggestions(){
+  const input = document.getElementById('pwPersonSearch');
+  const list = document.getElementById('pwPersonSuggestions');
+  const term = input.value.trim().toLowerCase();
+
+  if(!term){
+    list.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  const matches = members
+    .map((m, i) => ({m, label: labelFor(m, i)}))
+    .filter(x => x.label.toLowerCase().includes(term))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    list.innerHTML = `<div class="suggestion-empty">Nadie coincide con ese nombre.</div>`;
+    list.style.display = '';
+    return;
+  }
+
+  list.innerHTML = matches.map(x =>
+    `<div class="suggestion-item" data-id="${x.m.id}">${escapeHtml(x.label)}</div>`
+  ).join('');
+  list.style.display = '';
+
+  list.querySelectorAll('.suggestion-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      const m = members.find(x => x.id === id);
+      if(!m) return;
+      selectedPwPersonId = id;
+      input.value = el.textContent;
+      list.style.display = 'none';
+      document.getElementById('pwPersonLabel').textContent = `Contraseña de ${m.fullName}`;
+      document.getElementById('pwPersonPassword').value = m.viewPassword || '';
+      document.getElementById('pwEditRow').style.display = 'flex';
+      setPwPersonStatus('', false);
+    });
+  });
+}
+
+document.getElementById('pwPersonSearch').addEventListener('input', () => {
+  selectedPwPersonId = null;
+  document.getElementById('pwEditRow').style.display = 'none';
+  renderPwPersonSuggestions();
+});
+document.getElementById('pwPersonSearch').addEventListener('focus', renderPwPersonSuggestions);
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('pwPersonSearch').closest('.field');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('pwPersonSuggestions').style.display = 'none';
+  }
+});
+
+document.getElementById('savePersonPasswordBtn').addEventListener('click', async () => {
+  if(!selectedPwPersonId) return;
+  const member = members.find(m => m.id === selectedPwPersonId);
+  if(!member) return;
+  const val = document.getElementById('pwPersonPassword').value.trim();
+  member.viewPassword = val || null;
+  setPwPersonStatus('Guardando...', false);
+  const ok = await saveMembers();
+  setPwPersonStatus(ok ? `Contraseña de ${member.fullName} guardada.` : 'No se pudo guardar. Intenta de nuevo.', !ok);
+});
+
+document.getElementById('clearPersonPasswordBtn').addEventListener('click', async () => {
+  if(!selectedPwPersonId) return;
+  const member = members.find(m => m.id === selectedPwPersonId);
+  if(!member) return;
+  member.viewPassword = null;
+  document.getElementById('pwPersonPassword').value = '';
+  setPwPersonStatus('Guardando...', false);
+  const ok = await saveMembers();
+  setPwPersonStatus(ok ? `Se quitó la contraseña de ${member.fullName}.` : 'No se pudo guardar. Intenta de nuevo.', !ok);
+});
+
+function setReassignStatus(msg, isErr){
+  const el = document.getElementById('reassignStatus');
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+let reassignPersonId = null;
+let reassignNewLeaderId = null;
+
+function renderReassignPersonSuggestions(){
+  const input = document.getElementById('reassignPersonSearch');
+  const list = document.getElementById('reassignPersonSuggestions');
+  const term = input.value.trim().toLowerCase();
+  if(!term){ list.style.display = 'none'; list.innerHTML = ''; return; }
+
+  const matches = members
+    .map((m, i) => ({m, label: labelFor(m, i)}))
+    .filter(x => x.label.toLowerCase().includes(term))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    list.innerHTML = `<div class="suggestion-empty">Nadie coincide con ese nombre.</div>`;
+    list.style.display = '';
+    return;
+  }
+
+  list.innerHTML = matches.map(x => `<div class="suggestion-item" data-id="${x.m.id}">${escapeHtml(x.label)}</div>`).join('');
+  list.style.display = '';
+
+  list.querySelectorAll('.suggestion-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      const m = members.find(x => x.id === id);
+      if(!m) return;
+      reassignPersonId = id;
+      reassignNewLeaderId = null;
+      input.value = el.textContent;
+      list.style.display = 'none';
+      const currentLeader = m.leaderId ? members.find(x => x.id === m.leaderId) : null;
+      document.getElementById('reassignCurrentLeader').textContent = currentLeader
+        ? `Líder actual: ${currentLeader.fullName}`
+        : 'Líder actual: ninguno (es raíz del árbol)';
+      document.getElementById('reassignNoLeaderCheckbox').checked = false;
+      document.getElementById('reassignNewLeaderSearch').value = '';
+      document.getElementById('reassignNewLeaderSearch').disabled = false;
+      document.getElementById('reassignEditRow').style.display = 'block';
+      setReassignStatus('', false);
+    });
+  });
+}
+
+document.getElementById('reassignPersonSearch').addEventListener('input', () => {
+  reassignPersonId = null;
+  document.getElementById('reassignEditRow').style.display = 'none';
+  renderReassignPersonSuggestions();
+});
+document.getElementById('reassignPersonSearch').addEventListener('focus', renderReassignPersonSuggestions);
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('reassignPersonSearch').closest('.field');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('reassignPersonSuggestions').style.display = 'none';
+  }
+});
+
+function renderReassignNewLeaderSuggestions(){
+  const input = document.getElementById('reassignNewLeaderSearch');
+  const list = document.getElementById('reassignNewLeaderSuggestions');
+  const term = input.value.trim().toLowerCase();
+  if(!term){ list.style.display = 'none'; list.innerHTML = ''; return; }
+
+  const blocked = reassignPersonId ? subtreeIds(reassignPersonId) : new Set();
+  const matches = members
+    .map((m, i) => ({m, label: labelFor(m, i)}))
+    .filter(x => !blocked.has(x.m.id))
+    .filter(x => x.label.toLowerCase().includes(term))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    list.innerHTML = `<div class="suggestion-empty">Nadie coincide (o solo quedan personas de su propio equipo, que no pueden ser su líder).</div>`;
+    list.style.display = '';
+    return;
+  }
+
+  list.innerHTML = matches.map(x => `<div class="suggestion-item" data-id="${x.m.id}">${escapeHtml(x.label)}</div>`).join('');
+  list.style.display = '';
+
+  list.querySelectorAll('.suggestion-item').forEach(el => {
+    el.addEventListener('click', () => {
+      reassignNewLeaderId = el.dataset.id;
+      input.value = el.textContent;
+      list.style.display = 'none';
+    });
+  });
+}
+
+document.getElementById('reassignNewLeaderSearch').addEventListener('input', () => {
+  reassignNewLeaderId = null;
+  renderReassignNewLeaderSuggestions();
+});
+document.getElementById('reassignNewLeaderSearch').addEventListener('focus', renderReassignNewLeaderSuggestions);
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('reassignNewLeaderSearch').closest('.field');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('reassignNewLeaderSuggestions').style.display = 'none';
+  }
+});
+
+document.getElementById('reassignNoLeaderCheckbox').addEventListener('change', (e) => {
+  const disabled = e.target.checked;
+  document.getElementById('reassignNewLeaderSearch').disabled = disabled;
+  if(disabled){
+    document.getElementById('reassignNewLeaderSearch').value = '';
+    reassignNewLeaderId = null;
+  }
+});
+
+document.getElementById('saveReassignBtn').addEventListener('click', async () => {
+  if(!reassignPersonId){
+    setReassignStatus('Elige primero a la persona que quieres mover.', true);
+    return;
+  }
+  const person = members.find(m => m.id === reassignPersonId);
+  if(!person) return;
+
+  const noLeader = document.getElementById('reassignNoLeaderCheckbox').checked;
+  let newLeaderId = null;
+
+  if(!noLeader){
+    if(!reassignNewLeaderId){
+      const term = document.getElementById('reassignNewLeaderSearch').value.trim().toLowerCase();
+      const exact = members.map((m, i) => ({m, label: labelFor(m, i)})).filter(x => x.label.toLowerCase() === term);
+      if(exact.length === 1) reassignNewLeaderId = exact[0].m.id;
+    }
+    if(!reassignNewLeaderId){
+      setReassignStatus('Escribe el nombre del nuevo líder y elígelo de la lista, o marca "Dejar sin líder".', true);
+      return;
+    }
+    newLeaderId = reassignNewLeaderId;
+
+    if(newLeaderId === reassignPersonId){
+      setReassignStatus('Una persona no puede ser su propio líder.', true);
+      return;
+    }
+    const descendants = subtreeIds(reassignPersonId);
+    if(descendants.has(newLeaderId)){
+      setReassignStatus('No puedes elegir a alguien de su propio equipo como su nuevo líder (crearía un ciclo).', true);
+      return;
+    }
+  }
+
+  person.leaderId = newLeaderId;
+  setReassignStatus('Guardando...', false);
+  const ok = await saveMembers();
+  if(ok){
+    touchTreeUpdate();
+    render();
+    const leaderName = newLeaderId ? members.find(m => m.id === newLeaderId).fullName : 'ninguno (ahora es raíz)';
+    setReassignStatus(`Listo: el líder de ${person.fullName} ahora es ${leaderName}.`, false);
+    document.getElementById('reassignCurrentLeader').textContent = `Líder actual: ${newLeaderId ? leaderName : 'ninguno (es raíz del árbol)'}`;
+  }else{
+    setReassignStatus('No se pudo guardar. Intenta de nuevo.', true);
   }
 });
 
@@ -1507,6 +1843,15 @@ function buildTreeHtml(){
     document.getElementById('legend').innerHTML = '';
     document.getElementById('levelSummary').innerHTML = '';
     container.innerHTML = '<div class="empty"><strong>Elige tu nombre arriba</strong>Así solo verás tu equipo hacia abajo, sin ver quién está por encima.</div>';
+    return;
+  }
+
+  if(!unlocked && treeAccessGrantedFor !== viewerId){
+    count.textContent = '0';
+    currentViewerLabel.textContent = 'Acceso protegido.';
+    document.getElementById('legend').innerHTML = '';
+    document.getElementById('levelSummary').innerHTML = '';
+    container.innerHTML = '<div class="empty"><svg class="icon icon-tight" viewBox="0 0 24 24" style="width:28px;height:28px;margin-bottom:10px;"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><strong>Este equipo está protegido</strong>Escribe tu nombre arriba y, si tienes una contraseña asignada, ingrésala para entrar.</div>';
     return;
   }
 
@@ -1684,7 +2029,13 @@ async function storageGet(key, shared){
       /* sigue con el respaldo local */
     }
   }
+  if(window.storage && typeof window.storage.get === 'function'){
+    try{
+      return await window.storage.get(key, shared);
+    }catch(e){ /* fall through to local backup */ }
+  }
   // Datos solo del dispositivo (ej. a quién está viendo esta pantalla): localStorage
+  usingLocalFallback = true;
   try{
     const raw = localStorage.getItem('arbolEquipoMW_' + key);
     return raw !== null ? {key, value: raw, shared} : null;
@@ -1707,12 +2058,51 @@ async function storageSet(key, value, shared){
       /* sigue con el respaldo local para no perder el cambio */
     }
   }
+  if(window.storage && typeof window.storage.set === 'function'){
+    try{
+      const result = await window.storage.set(key, value, shared);
+      if(result) return result;
+    }catch(e){ /* fall through to local backup */ }
+  }
+  usingLocalFallback = true;
   try{
     localStorage.setItem('arbolEquipoMW_' + key, value);
     return {key, value, shared};
   }catch(e){
     return null;
   }
+}
+
+let treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null};
+
+function formatDateTime(iso){
+  if(!iso) return 'Sin registros todavía';
+  const d = new Date(iso);
+  return d.toLocaleString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+
+function updateMetaDisplays(){
+  const treeEl = document.getElementById('treeLastUpdated');
+  const pointsEl = document.getElementById('pointsLastUpdated');
+  if(treeEl) treeEl.textContent = formatDateTime(treeMeta.lastTreeUpdate);
+  if(pointsEl) pointsEl.textContent = formatDateTime(treeMeta.lastPointsUpdate);
+}
+
+async function saveMeta(){
+  try{
+    await storageSet(META_KEY, JSON.stringify(treeMeta), true);
+  }catch(e){ /* non-fatal */ }
+  updateMetaDisplays();
+}
+
+function touchTreeUpdate(){
+  treeMeta.lastTreeUpdate = new Date().toISOString();
+  saveMeta();
+}
+
+function touchPointsUpdate(){
+  treeMeta.lastPointsUpdate = new Date().toISOString();
+  saveMeta();
 }
 
 async function loadMembers(){
@@ -1729,6 +2119,13 @@ async function loadMembers(){
   }catch(e){
     viewerId = null;
   }
+  try{
+    const metaResult = await storageGet(META_KEY, true);
+    treeMeta = metaResult ? JSON.parse(metaResult.value) : {lastTreeUpdate: null, lastPointsUpdate: null};
+  }catch(e){
+    treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null};
+  }
+  updateMetaDisplays();
   updateStorageModeBadge();
   render();
 }
@@ -2093,6 +2490,7 @@ document.getElementById('backToTreeBtn').addEventListener('click', () => {
   document.getElementById('adminPage').style.display = 'none';
   document.getElementById('mainPage').style.display = '';
   window.scrollTo(0,0);
+  buildTreeHtml();
 });
 
 function attemptUnlock(){
@@ -2202,7 +2600,7 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
           excelName,
           memberId: member ? member.id : '',
           existing,
-          points: (raw === '' || raw == null) ? '' : Number(raw),
+          points: (raw === '' || raw == null) ? '' : floorPts(raw),
           ignored: false
         };
       })
@@ -2238,7 +2636,7 @@ function renderPointsPreview(){
     const statusHtml = r.ignored
       ? `<span class="excel-name">Ignorada</span>`
       : (isUnmatched ? `<span class="status-bad">Sin coincidir</span>` : `<span class="status-ok"><svg class="icon icon-tight" viewBox="0 0 24 24" style="width:12px;height:12px;"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg> Coincide</span>`);
-    const newVal = r.points === '' ? 0 : Number(r.points);
+    const newVal = r.points === '' ? 0 : (floorPts(r.points) || 0);
     const result = pointsPreviewAddMode ? (r.existing + newVal) : newVal;
     return `
       <tr class="${rowClass}" data-idx="${idx}">
@@ -2288,11 +2686,11 @@ function renderPointsPreview(){
   table.querySelectorAll('.preview-points').forEach(el => {
     el.addEventListener('input', () => {
       const idx = Number(el.dataset.idx);
-      pointsPreviewRows[idx].points = el.value === '' ? '' : Number(el.value);
+      pointsPreviewRows[idx].points = el.value === '' ? '' : el.value;
       if(pointsPreviewAddMode){
         const resultCell = table.querySelector(`.preview-result[data-result-idx="${idx}"] b`);
         if(resultCell){
-          const newVal = pointsPreviewRows[idx].points === '' ? 0 : Number(pointsPreviewRows[idx].points);
+          const newVal = floorPts(pointsPreviewRows[idx].points) || 0;
           resultCell.textContent = pointsPreviewRows[idx].existing + newVal;
         }
       }
@@ -2322,7 +2720,7 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
     if(!member){ skipped.push(r.excelName); return; }
 
     const existing = getMemberMonthPoints(member, info.monthKey) || {p1: null, p2: null};
-    const enteredVal = r.points === '' ? 0 : Number(r.points);
+    const enteredVal = r.points === '' ? 0 : (floorPts(r.points) || 0);
     const targetValue = pointsPreviewAddMode ? (r.existing + enteredVal) : (r.points === '' ? null : enteredVal);
     const newP1 = pointsPreviewTargetPeriod === 1 ? targetValue : existing.p1;
     const newP2 = pointsPreviewTargetPeriod === 2 ? targetValue : existing.p2;
@@ -2336,6 +2734,7 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
 
   const ok = await saveMembers();
   if(ok){
+    touchPointsUpdate();
     render();
     const modeWord = pointsPreviewAddMode ? 'sumaron' : 'cargaron';
     let msg = `Se ${modeWord} puntos del Periodo ${pointsPreviewTargetPeriod} para ${matched} persona(s).`;
@@ -2374,6 +2773,7 @@ document.getElementById('clearPointsBtn').addEventListener('click', async () => 
   });
   const saved = await saveMembers();
   if(saved){
+    touchPointsUpdate();
     render();
     setExcelStatus(`Puntos de ${monthLabel} borrados.`, false);
   }else{
@@ -2394,6 +2794,7 @@ document.getElementById('seedBtn').addEventListener('click', async () => {
   if(saved){
     viewerId = members[0].id;
     await saveViewer(viewerId);
+    touchTreeUpdate();
     render();
     setToolsStatus('Equipo de ejemplo cargado.', false);
   }else{
@@ -2414,12 +2815,77 @@ document.getElementById('clearBtn').addEventListener('click', async () => {
   const saved = await saveMembers();
   if(saved){
     await saveViewer('');
+    touchTreeUpdate();
     render();
     setToolsStatus('Árbol vaciado.', false);
   }else{
     members = previousMembers;
     viewerId = previousViewer;
     setToolsStatus('No se pudo guardar. Intenta de nuevo.', true);
+  }
+});
+
+let treeAccessGrantedFor = null;
+let pendingAccessMemberId = null;
+
+function hidePasswordField(){
+  document.getElementById('viewerPasswordField').style.display = 'none';
+  document.getElementById('viewerAccessPassword').value = '';
+  pendingAccessMemberId = null;
+}
+
+async function grantTreeAccess(targetId){
+  treeAccessGrantedFor = targetId;
+  viewerId = targetId;
+  selectedViewerCandidateId = targetId;
+  await saveViewer(viewerId);
+  hidePasswordField();
+  setViewerSearchStatus('', false);
+  buildTreeHtml();
+}
+
+function requestTreeAccess(targetId){
+  const member = members.find(m => m.id === targetId);
+  if(!member) return;
+
+  if(unlocked){
+    grantTreeAccess(targetId);
+    return;
+  }
+
+  if(!member.viewPassword){
+    hidePasswordField();
+    setViewerSearchStatus('Esta persona todavía no tiene una contraseña de acceso asignada. Pide al administrador que se la asigne en Configuración.', true);
+    return;
+  }
+
+  if(treeAccessGrantedFor === targetId){
+    grantTreeAccess(targetId);
+    return;
+  }
+
+  pendingAccessMemberId = targetId;
+  document.getElementById('viewerPasswordField').style.display = 'flex';
+  document.getElementById('viewerAccessPassword').value = '';
+  document.getElementById('viewerAccessPassword').focus();
+  setViewerSearchStatus('Esta persona tiene su acceso protegido. Escribe su contraseña para entrar.', false);
+}
+
+document.getElementById('viewerAccessSubmitBtn').addEventListener('click', () => {
+  if(!pendingAccessMemberId) return;
+  const member = members.find(m => m.id === pendingAccessMemberId);
+  if(!member) return;
+  const typed = document.getElementById('viewerAccessPassword').value;
+  if(typed === member.viewPassword){
+    grantTreeAccess(pendingAccessMemberId);
+  }else{
+    setViewerSearchStatus('Contraseña incorrecta.', true);
+  }
+});
+document.getElementById('viewerAccessPassword').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    document.getElementById('viewerAccessSubmitBtn').click();
   }
 });
 
@@ -2439,14 +2905,11 @@ document.getElementById('viewBtn').addEventListener('click', async () => {
 
   if(!targetId){
     setViewerSearchStatus('Escribe tu nombre y elígelo de la lista de sugerencias.', true);
+    hidePasswordField();
     return;
   }
 
-  setViewerSearchStatus('', false);
-  viewerId = targetId;
-  selectedViewerCandidateId = targetId;
-  await saveViewer(viewerId);
-  buildTreeHtml();
+  requestTreeAccess(targetId);
 });
 
 document.getElementById('joinForm').addEventListener('submit', async (e) => {
@@ -2506,6 +2969,7 @@ document.getElementById('joinForm').addEventListener('submit', async (e) => {
   const ok = await saveMembers();
 
   if(ok){
+    touchTreeUpdate();
     render();
     setStatus('¡Listo! Ya forma parte del árbol.', false);
     nameInput.value = '';
