@@ -36,8 +36,7 @@
 
   header{
     display:flex; flex-direction:column; gap:6px;
-    border-bottom:1px solid #ECE6F5;
-    padding-bottom:28px; margin-bottom:32px;
+    margin-bottom:12px;
   }
   .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--lilac-deep);}
   h1{
@@ -371,9 +370,12 @@
   .xlsx-badge.error{background:#FBDDD9; color:var(--danger);}
 
   .storage-note{
-    margin-top:14px; padding:10px 14px; border-radius:6px;
-    background:#FBF3DA; color:#7A5B12; font-size:11.5px; line-height:1.5;
+    display:none;
+    align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:50%;
+    background:#FBF3DA; color:#B5860F;
     border:1px solid #F0DFA0;
+    cursor:default;
   }
 
   .suggestions-list{
@@ -535,9 +537,6 @@
 <div class="wrap">
 
   <header>
-    <div class="eyebrow">Árbol del equipo</div>
-    <h1>MI EQUIPO</h1>
-    <div class="subtitle">Mi equipo</div>
     <div class="storage-note" id="storageModeNote" style="display:none;"></div>
   </header>
 
@@ -802,6 +801,10 @@
       <div class="hint">Primero elige a qué periodo corresponden los puntos que vas a subir, luego elige el archivo Excel con las columnas "Nombre completo" y "Puntos". Antes de guardar te muestro una vista previa donde puedes corregir cualquier error.</div>
       <div class="last-updated-note">Última actualización de puntos: <strong id="pointsLastUpdated">Sin registros todavía</strong></div>
       <fieldset id="excelFieldset" disabled>
+        <div class="month-picker-row" style="margin-bottom:14px;">
+          <label for="pointsTargetMonth">Mes de estos puntos</label>
+          <select id="pointsTargetMonth"></select>
+        </div>
         <div class="period-choice-row">
           <label class="period-choice">
             <input type="radio" name="pointsPeriodChoice" id="periodChoice1" value="1">
@@ -931,6 +934,31 @@ function collectAvailableMonths(){
     if(m.pointsMonthKey) set.add(m.pointsMonthKey);
   });
   return Array.from(set).sort().reverse();
+}
+
+function generateRecentMonths(monthsBack){
+  const now = new Date();
+  const list = [];
+  for(let i = 0; i < monthsBack; i++){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    list.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return list;
+}
+
+function collectUploadableMonths(){
+  const set = new Set([...generateRecentMonths(12), ...collectAvailableMonths()]);
+  return Array.from(set).sort().reverse();
+}
+
+function updatePointsTargetMonthSelect(){
+  const sel = document.getElementById('pointsTargetMonth');
+  if(!sel) return;
+  const prev = sel.value;
+  const months = collectUploadableMonths();
+  const current = getPeriodInfo().monthKey;
+  sel.innerHTML = months.map(mk => `<option value="${mk}">${monthKeyLabel(mk)}${mk === current ? ' (mes en curso)' : ''}</option>`).join('');
+  sel.value = months.includes(prev) ? prev : current;
 }
 
 function updateMonthSelect(){
@@ -2009,6 +2037,7 @@ function render(){
   updateFormMode();
   updateViewerSelect();
   updateMonthSelect();
+  updatePointsTargetMonthSelect();
   buildTreeHtml();
 }
 
@@ -2535,6 +2564,7 @@ function normalizeNameForMatch(s){
 let pointsPreviewRows = null;
 let pointsPreviewTargetPeriod = null;
 let pointsPreviewAddMode = false;
+let pointsPreviewMonthKey = null;
 
 document.getElementById('excelInput').addEventListener('change', async (e) => {
   if(!unlocked) return;
@@ -2582,8 +2612,10 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
     }
 
     const info = getPeriodInfo();
+    const targetMonthKey = document.getElementById('pointsTargetMonth').value || info.monthKey;
     pointsPreviewTargetPeriod = targetPeriod;
     pointsPreviewAddMode = addMode;
+    pointsPreviewMonthKey = targetMonthKey;
     pointsPreviewRows = rows
       .map(row => {
         const excelName = String(row[nameKey] || '').trim();
@@ -2592,7 +2624,7 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
         const member = members.find(m => normalizeNameForMatch(m.fullName) === normalizeNameForMatch(excelName));
         let existing = 0;
         if(member){
-          const pts = getMemberMonthPoints(member, info.monthKey);
+          const pts = getMemberMonthPoints(member, targetMonthKey);
           const cur = pts ? (targetPeriod === 1 ? pts.p1 : pts.p2) : null;
           existing = cur != null ? cur : 0;
         }
@@ -2608,7 +2640,7 @@ document.getElementById('excelInput').addEventListener('change', async (e) => {
 
     renderPointsPreview();
     const modeLabel = addMode ? 'sumando a lo que ya tenían' : 'reemplazando el total';
-    setExcelStatus(`Revisa la vista previa abajo antes de confirmar (Periodo ${targetPeriod}, ${modeLabel}).`, false);
+    setExcelStatus(`Revisa la vista previa abajo antes de confirmar (${monthKeyLabel(targetMonthKey)}, Periodo ${targetPeriod}, ${modeLabel}).`, false);
   }catch(err){
     setExcelStatus('No pude leer ese archivo. Verifica que sea un Excel válido.', true);
   }
@@ -2659,7 +2691,7 @@ function renderPointsPreview(){
         <th>Nombre en el Excel</th>
         <th>Persona en el árbol</th>
         ${pointsPreviewAddMode ? `<th>Actual</th>` : ''}
-        <th>${pointsPreviewAddMode ? 'A sumar' : 'Nuevo total'} (Periodo ${pointsPreviewTargetPeriod})</th>
+        <th>${pointsPreviewAddMode ? 'A sumar' : 'Nuevo total'} (${monthKeyLabel(pointsPreviewMonthKey)}, Periodo ${pointsPreviewTargetPeriod})</th>
         ${pointsPreviewAddMode ? `<th>Resultado</th>` : ''}
       </tr>
     </thead>
@@ -2671,11 +2703,10 @@ function renderPointsPreview(){
       const idx = Number(el.dataset.idx);
       pointsPreviewRows[idx].memberId = el.value;
       pointsPreviewRows[idx].ignored = false;
-      const info = getPeriodInfo();
       const member = members.find(m => m.id === el.value);
       let existing = 0;
       if(member){
-        const pts = getMemberMonthPoints(member, info.monthKey);
+        const pts = getMemberMonthPoints(member, pointsPreviewMonthKey);
         const cur = pts ? (pointsPreviewTargetPeriod === 1 ? pts.p1 : pts.p2) : null;
         existing = cur != null ? cur : 0;
       }
@@ -2704,13 +2735,14 @@ document.getElementById('cancelPointsBtn').addEventListener('click', () => {
   pointsPreviewRows = null;
   pointsPreviewTargetPeriod = null;
   pointsPreviewAddMode = false;
+  pointsPreviewMonthKey = null;
   document.getElementById('pointsPreviewWrap').style.display = 'none';
   setExcelStatus('Carga cancelada.', false);
 });
 
 document.getElementById('confirmPointsBtn').addEventListener('click', async () => {
   if(!pointsPreviewRows) return;
-  const info = getPeriodInfo();
+  const monthKey = pointsPreviewMonthKey || getPeriodInfo().monthKey;
   let matched = 0;
   const skipped = [];
 
@@ -2719,12 +2751,12 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
     const member = members.find(m => m.id === r.memberId);
     if(!member){ skipped.push(r.excelName); return; }
 
-    const existing = getMemberMonthPoints(member, info.monthKey) || {p1: null, p2: null};
+    const existing = getMemberMonthPoints(member, monthKey) || {p1: null, p2: null};
     const enteredVal = r.points === '' ? 0 : (floorPts(r.points) || 0);
     const targetValue = pointsPreviewAddMode ? (r.existing + enteredVal) : (r.points === '' ? null : enteredVal);
     const newP1 = pointsPreviewTargetPeriod === 1 ? targetValue : existing.p1;
     const newP2 = pointsPreviewTargetPeriod === 2 ? targetValue : existing.p2;
-    setMemberMonthPoints(member, info.monthKey, newP1, newP2);
+    setMemberMonthPoints(member, monthKey, newP1, newP2);
     matched++;
   });
 
@@ -2737,12 +2769,13 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
     touchPointsUpdate();
     render();
     const modeWord = pointsPreviewAddMode ? 'sumaron' : 'cargaron';
-    let msg = `Se ${modeWord} puntos del Periodo ${pointsPreviewTargetPeriod} para ${matched} persona(s).`;
+    let msg = `Se ${modeWord} puntos de ${monthKeyLabel(monthKey)} (Periodo ${pointsPreviewTargetPeriod}) para ${matched} persona(s).`;
     if(skipped.length) msg += ` Se ignoraron ${skipped.length} fila(s) sin persona asignada.`;
     setExcelStatus(msg, skipped.length > 0);
     pointsPreviewRows = null;
     pointsPreviewTargetPeriod = null;
     pointsPreviewAddMode = false;
+    pointsPreviewMonthKey = null;
     document.getElementById('pointsPreviewWrap').style.display = 'none';
   }else{
     setExcelStatus('No se pudieron guardar los puntos. Intenta de nuevo.', true);
@@ -2758,14 +2791,15 @@ function setToolsStatus(msg, isErr){
 
 document.getElementById('clearPointsBtn').addEventListener('click', async () => {
   if(!unlocked) return;
-  const monthLabel = monthKeyLabel(selectedMonthKey);
+  const targetMonthKey = document.getElementById('pointsTargetMonth').value || getPeriodInfo().monthKey;
+  const monthLabel = monthKeyLabel(targetMonthKey);
   const ok = confirm(`Esto borrará los puntos de ${monthLabel} de todas las personas (los demás meses no se tocan). ¿Continuar?`);
   if(!ok) return;
   members.forEach(m => {
-    if(m.pointsHistory && m.pointsHistory[selectedMonthKey]){
-      delete m.pointsHistory[selectedMonthKey];
+    if(m.pointsHistory && m.pointsHistory[targetMonthKey]){
+      delete m.pointsHistory[targetMonthKey];
     }
-    if(m.pointsMonthKey === selectedMonthKey){
+    if(m.pointsMonthKey === targetMonthKey){
       m.pointsMonthKey = null;
       m.pointsP1 = null;
       m.pointsP2 = null;
