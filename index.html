@@ -625,42 +625,6 @@
       </div>
     </div>
 
-    <div class="card no-print" id="registerCard">
-      <h2 id="formTitle">Registrar a la líder principal</h2>
-      <div class="hint" id="formHint">Como aún no hay nadie, la primera persona que se registre será la raíz del árbol.</div>
-      <form id="joinForm">
-        <div class="field">
-          <label for="fullName">Nombre completo</label>
-          <input type="text" id="fullName" placeholder="Nombre y apellido" autocomplete="off" required>
-        </div>
-        <div class="field">
-          <label for="clientCode">Membresía (opcional)</label>
-          <input type="text" id="clientCode" placeholder="Ej. MW25003" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="ticketNumber">Número de ticket</label>
-          <input type="text" id="ticketNumber" placeholder="Ej. TCK-0001" autocomplete="off" required>
-        </div>
-        <div class="field" id="leaderField" style="display:none; position:relative;">
-          <label for="leaderSearchInput">¿Quién es tu líder?</label>
-          <input type="text" id="leaderSearchInput" placeholder="Escribe el nombre de tu líder..." autocomplete="off">
-          <div class="suggestions-list" id="leaderSuggestions" style="display:none;"></div>
-        </div>
-        <div class="row2">
-          <div class="field">
-            <label for="joinedAt">Fecha en que se integra</label>
-            <input type="date" id="joinedAt" required>
-          </div>
-          <div class="field">
-            <label for="firstPurchaseAt">Fecha de primera compra</label>
-            <input type="date" id="firstPurchaseAt">
-          </div>
-        </div>
-        <button type="submit" id="submitBtn">Registrar</button>
-        <div class="status" id="status"></div>
-      </form>
-    </div>
-
     <div class="modal-overlay no-print" id="levelSummaryOverlay" style="display:none;">
       <div class="modal-box">
         <button type="button" class="modal-close" id="closeLevelSummaryBtn" aria-label="Cerrar"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
@@ -749,6 +713,45 @@
           </div>
         </div>
         <div class="status" id="reassignStatus"></div>
+      </fieldset>
+    </div>
+
+    <div class="card" id="registerCard">
+      <h2 id="formTitle">Registrar a la líder principal</h2>
+      <div class="hint" id="formHint">Como aún no hay nadie, la primera persona que se registre será la raíz del árbol.</div>
+      <div class="locked-hint" id="formLockedHint">Desbloquea la edición arriba para registrar personas.</div>
+      <fieldset id="formFieldset" disabled>
+        <form id="joinForm">
+          <div class="field">
+            <label for="fullName">Nombre completo</label>
+            <input type="text" id="fullName" placeholder="Nombre y apellido" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label for="clientCode">Membresía (opcional)</label>
+            <input type="text" id="clientCode" placeholder="Ej. MW25003" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="ticketNumber">Número de ticket</label>
+            <input type="text" id="ticketNumber" placeholder="Ej. TCK-0001" autocomplete="off" required>
+          </div>
+          <div class="field" id="leaderField" style="display:none; position:relative;">
+            <label for="leaderSearchInput">¿Quién es tu líder?</label>
+            <input type="text" id="leaderSearchInput" placeholder="Escribe el nombre de tu líder..." autocomplete="off">
+            <div class="suggestions-list" id="leaderSuggestions" style="display:none;"></div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="joinedAt">Fecha en que se integra</label>
+              <input type="date" id="joinedAt" required>
+            </div>
+            <div class="field">
+              <label for="firstPurchaseAt">Fecha de primera compra</label>
+              <input type="date" id="firstPurchaseAt">
+            </div>
+          </div>
+          <button type="submit" id="submitBtn">Registrar</button>
+          <div class="status" id="status"></div>
+        </form>
       </fieldset>
     </div>
 
@@ -1052,20 +1055,24 @@ function updateLockUI(){
   const importFieldset = document.getElementById('importFieldset');
   const passwordsFieldset = document.getElementById('passwordsFieldset');
   const reassignFieldset = document.getElementById('reassignFieldset');
+  const formFieldset = document.getElementById('formFieldset');
   const toolsHint = document.getElementById('toolsLockedHint');
   const importHint = document.getElementById('importLockedHint');
   const passwordsHint = document.getElementById('passwordsLockedHint');
   const reassignHint = document.getElementById('reassignLockedHint');
+  const formHintLock = document.getElementById('formLockedHint');
 
   toolsFieldset.disabled = !unlocked;
   excelFieldset.disabled = !unlocked;
   importFieldset.disabled = !unlocked;
   passwordsFieldset.disabled = !unlocked;
   reassignFieldset.disabled = !unlocked;
+  formFieldset.disabled = !unlocked;
   toolsHint.style.display = unlocked ? 'none' : 'block';
   importHint.style.display = unlocked ? 'none' : 'block';
   passwordsHint.style.display = unlocked ? 'none' : 'block';
   reassignHint.style.display = unlocked ? 'none' : 'block';
+  formHintLock.style.display = unlocked ? 'none' : 'block';
 
   if(unlocked){
     badge.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/></svg>Edición desbloqueada';
@@ -2162,12 +2169,7 @@ async function loadMembers(){
 function updateStorageModeBadge(){
   const el = document.getElementById('storageModeNote');
   if(!el) return;
-  if(usingLocalFallback){
-    el.style.display = '';
-    el.textContent = 'No se pudo conectar con la base de datos en la nube, así que se está guardando solo en este dispositivo y no se compartirá con las demás personas. Revisa tu conexión a internet o las reglas de Firestore.';
-  }else{
-    el.style.display = 'none';
-  }
+  el.style.display = 'none';
 }
 
 async function saveMembers(){
@@ -2948,6 +2950,10 @@ document.getElementById('viewBtn').addEventListener('click', async () => {
 
 document.getElementById('joinForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if(!unlocked){
+    setStatus('Desbloquea la edición arriba para registrar personas.', true);
+    return;
+  }
   const nameInput = document.getElementById('fullName');
   const clientCodeInput = document.getElementById('clientCode');
   const ticketInput = document.getElementById('ticketNumber');
