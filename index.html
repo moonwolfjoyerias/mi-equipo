@@ -160,11 +160,29 @@
   .tree-card{overflow:visible; padding-bottom:26px;}
   .tree-toolbar{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:6px;}
   .search-box{display:flex; gap:8px; align-items:center;}
-  .search-box input{width:220px;}
+  .search-input-wrap{position:relative; display:inline-flex; align-items:center;}
+  .search-input-wrap input{width:220px; padding-right:30px;}
   .search-box button{padding:10px 14px; font-size:14px;}
+  #clearSearchBtn{
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    background:none; border:none; padding:4px; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  #clearSearchBtn:hover{ color:var(--danger); }
+  #clearSearchBtn .icon{ margin-right:0; width:13px; height:13px; }
   .search-nav{display:flex; align-items:center; gap:6px;}
   .search-nav button{padding:6px 12px; font-size:14px; line-height:1;}
   .search-nav #matchCounter{font-size:11.5px; color:var(--muted); min-width:44px; text-align:center;}
+
+  .clearable-input{ position:relative; }
+  .clearable-input input{ width:100%; padding-right:30px; box-sizing:border-box; }
+  .input-clear-btn{
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    background:none; border:none; padding:4px; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .input-clear-btn:hover{ color:var(--danger); }
+  .input-clear-btn .icon{ margin-right:0; width:13px; height:13px; }
 
   .points-preview-scroll{max-height:340px; overflow-y:auto; border:1px solid #ECE6F5; border-radius:6px;}
   .points-preview-table{width:100%; border-collapse:collapse; font-size:12px;}
@@ -411,6 +429,8 @@
   .rank-history-table .rh-up{ color:#227A4E; font-weight:700; }
   .rank-history-table .rh-down{ color:var(--danger); font-weight:700; }
   .rank-history-table .rh-same{ color:var(--muted); }
+  .rank-history-table .ch-total-col{ font-weight:700; color:#1B5E3A; background:#F0FAF4; }
+  .rank-history-table .ch-na{ color:var(--muted); font-size:11px; }
 
   .raffle-tickets-grid{
     display:grid;
@@ -715,7 +735,10 @@
       <div class="viewer-row">
         <div class="field" style="position:relative;">
           <label for="viewerSearchInput">Tu nombre</label>
-          <input type="text" id="viewerSearchInput" placeholder="Escribe tu nombre..." autocomplete="off">
+          <div class="clearable-input">
+            <input type="text" id="viewerSearchInput" placeholder="Escribe tu nombre..." autocomplete="off">
+            <button type="button" class="input-clear-btn" data-target="viewerSearchInput" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+          </div>
           <div class="suggestions-list" id="viewerSuggestions" style="display:none;"></div>
         </div>
         <button type="button" id="viewBtn">Ver mi equipo</button>
@@ -749,7 +772,10 @@
       </div>
       <div class="tree-toolbar no-print">
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Buscar por nombre o membresía...">
+          <div class="search-input-wrap">
+            <input type="text" id="searchInput" placeholder="Buscar por nombre o membresía...">
+            <button type="button" id="clearSearchBtn" aria-label="Borrar búsqueda" style="display:none;"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+          </div>
           <button type="button" id="searchBtn" aria-label="Buscar"><svg class="icon icon-tight" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <div class="search-nav" id="searchNav" style="display:none;">
             <button type="button" id="prevMatchBtn" class="secondary" aria-label="Resultado anterior">‹</button>
@@ -820,7 +846,10 @@
       <fieldset id="passwordsFieldset" disabled>
         <div class="field" style="position:relative; max-width:340px;">
           <label for="pwPersonSearch">Persona</label>
-          <input type="text" id="pwPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+          <div class="clearable-input">
+            <input type="text" id="pwPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+            <button type="button" class="input-clear-btn" data-target="pwPersonSearch" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+          </div>
           <div class="suggestions-list" id="pwPersonSuggestions" style="display:none;"></div>
         </div>
         <div class="viewer-row" id="pwEditRow" style="display:none; margin-top:14px;">
@@ -842,7 +871,10 @@
       <fieldset id="reassignFieldset" disabled>
         <div class="field" style="position:relative; max-width:340px;">
           <label for="reassignPersonSearch">Persona a mover</label>
-          <input type="text" id="reassignPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+          <div class="clearable-input">
+            <input type="text" id="reassignPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+            <button type="button" class="input-clear-btn" data-target="reassignPersonSearch" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+          </div>
           <div class="suggestions-list" id="reassignPersonSuggestions" style="display:none;"></div>
         </div>
         <div id="reassignEditRow" style="display:none; margin-top:14px;">
@@ -854,7 +886,10 @@
           <div class="viewer-row">
             <div class="field" style="position:relative;">
               <label for="reassignNewLeaderSearch">Nuevo líder</label>
-              <input type="text" id="reassignNewLeaderSearch" placeholder="Escribe el nombre del nuevo líder..." autocomplete="off">
+              <div class="clearable-input">
+                <input type="text" id="reassignNewLeaderSearch" placeholder="Escribe el nombre del nuevo líder..." autocomplete="off">
+                <button type="button" class="input-clear-btn" data-target="reassignNewLeaderSearch" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+              </div>
               <div class="suggestions-list" id="reassignNewLeaderSuggestions" style="display:none;"></div>
             </div>
             <button type="button" id="saveReassignBtn">Guardar cambio</button>
@@ -891,6 +926,15 @@
       </fieldset>
     </div>
 
+    <div class="card">
+      <h2>Historial de comisiones</h2>
+      <div class="hint">Ve mes a mes cuánto se le ha ido acumulando en comisiones a cada líder, incluyendo el mes en curso, y el total acumulado.</div>
+      <div class="locked-hint" id="commissionHistoryLockedHint">Desbloquea la edición arriba para entrar a esta sección.</div>
+      <fieldset id="commissionHistoryFieldset" disabled>
+        <button type="button" id="openCommissionHistoryBtn">Ver historial de comisiones</button>
+      </fieldset>
+    </div>
+
     <div class="card" id="registerCard">
       <h2 id="formTitle">Registrar a la líder principal</h2>
       <div class="hint" id="formHint">Como aún no hay nadie, la primera persona que se registre será la raíz del árbol.</div>
@@ -911,7 +955,10 @@
           </div>
           <div class="field" id="leaderField" style="display:none; position:relative;">
             <label for="leaderSearchInput">¿Quién es tu líder?</label>
-            <input type="text" id="leaderSearchInput" placeholder="Escribe el nombre de tu líder..." autocomplete="off">
+            <div class="clearable-input">
+              <input type="text" id="leaderSearchInput" placeholder="Escribe el nombre de tu líder..." autocomplete="off">
+              <button type="button" class="input-clear-btn" data-target="leaderSearchInput" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+            </div>
             <div class="suggestions-list" id="leaderSuggestions" style="display:none;"></div>
           </div>
           <div class="row2">
@@ -1032,7 +1079,10 @@
       <div class="status" id="bulkCommissionsStatus"></div>
       <div class="field" style="max-width:340px; margin-top:16px;">
         <label for="leaderReportsSearch">Buscar líder</label>
-        <input type="text" id="leaderReportsSearch" placeholder="Escribe un nombre..." autocomplete="off">
+        <div class="clearable-input">
+          <input type="text" id="leaderReportsSearch" placeholder="Escribe un nombre..." autocomplete="off">
+          <button type="button" class="input-clear-btn" data-target="leaderReportsSearch" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+        </div>
       </div>
       <div class="leader-reports-list" id="leaderReportsList"></div>
       <div class="status" id="leaderReportsStatus"></div>
@@ -1105,6 +1155,27 @@
 
   </div>
 
+  <div id="commissionHistoryPage" style="display:none;">
+
+    <button type="button" id="backToAdminFromCommissionHistoryBtn" class="secondary no-print" style="margin-bottom:20px;">← Volver a configuración</button>
+
+    <div class="card">
+      <h2>Historial de comisiones</h2>
+      <div class="hint no-print">Comisión neta de cada líder mes a mes (incluye el mes en curso, calculada con los puntos que lleve cargados hasta ahora), y el total acumulado de los meses mostrados.</div>
+      <div class="viewer-row no-print">
+        <button type="button" id="downloadCommissionHistoryBtn" class="secondary">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M15 3v5h5"/><line x1="9" y1="13" x2="9" y2="18"/><line x1="12" y1="11" x2="12" y2="18"/><line x1="15" y1="15" x2="15" y2="18"/></svg>
+          Descargar Excel
+        </button>
+      </div>
+      <div class="status no-print" id="commissionHistoryStatus"></div>
+      <div class="rank-history-table-wrap">
+        <table class="rank-history-table" id="commissionHistoryTable"></table>
+      </div>
+    </div>
+
+  </div>
+
   <div class="modal-overlay no-print" id="levelSummaryOverlay" style="display:none;">
     <div class="modal-box">
       <button type="button" class="modal-close" id="closeLevelSummaryBtn" aria-label="Cerrar"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
@@ -1129,7 +1200,8 @@ const VIEWER_KEY = 'team-tree-viewer';
 const META_KEY = 'team-tree-meta';
 const EDIT_PASSWORD = 'UNICORNIOMW34';
 
-// Mismo proyecto Firebase que la app de la Gala, colección separada para el árbol de equipo
+// Mismo proyecto Firebase que ya tiene guardados a todas las personas del equipo
+// (colección arbolMiembros: una persona = un documento).
 const firebaseConfig = {
   apiKey: "AIzaSyCl_am3ptjgU6j8ykRrCItBIJK8qCLNi6c",
   authDomain: "gala-mw-2026-f82f1.firebaseapp.com",
@@ -1146,7 +1218,7 @@ try{
   console.error('No se pudo inicializar Firebase', e);
 }
 const ARBOL_COLLECTION = 'arbolEquipo';
-
+const ARBOL_MIEMBROS_COLLECTION = 'arbolMiembros';
 let members = []; // { id, fullName, leaderId, joinedAt, firstPurchaseAt, pointsHistory: {monthKey: {p1, p2}} }
 let viewerId = null;
 let unlocked = false;
@@ -1385,6 +1457,7 @@ function updateLockUI(){
   const leaderReportsFieldset = document.getElementById('leaderReportsFieldset');
   const raffleFieldset = document.getElementById('raffleFieldset');
   const rankHistoryFieldset = document.getElementById('rankHistoryFieldset');
+  const commissionHistoryFieldset = document.getElementById('commissionHistoryFieldset');
   const formFieldset = document.getElementById('formFieldset');
   const importHint = document.getElementById('importLockedHint');
   const passwordsHint = document.getElementById('passwordsLockedHint');
@@ -1392,6 +1465,7 @@ function updateLockUI(){
   const leaderReportsHint = document.getElementById('leaderReportsLockedHint');
   const raffleHint = document.getElementById('raffleLockedHint');
   const rankHistoryHint = document.getElementById('rankHistoryLockedHint');
+  const commissionHistoryHint = document.getElementById('commissionHistoryLockedHint');
   const formHintLock = document.getElementById('formLockedHint');
 
   excelFieldset.disabled = !unlocked;
@@ -1401,6 +1475,7 @@ function updateLockUI(){
   leaderReportsFieldset.disabled = !unlocked;
   raffleFieldset.disabled = !unlocked;
   rankHistoryFieldset.disabled = !unlocked;
+  commissionHistoryFieldset.disabled = !unlocked;
   formFieldset.disabled = !unlocked;
   importHint.style.display = unlocked ? 'none' : 'block';
   passwordsHint.style.display = unlocked ? 'none' : 'block';
@@ -1408,6 +1483,7 @@ function updateLockUI(){
   leaderReportsHint.style.display = unlocked ? 'none' : 'block';
   raffleHint.style.display = unlocked ? 'none' : 'block';
   rankHistoryHint.style.display = unlocked ? 'none' : 'block';
+  commissionHistoryHint.style.display = unlocked ? 'none' : 'block';
   formHintLock.style.display = unlocked ? 'none' : 'block';
   if(unlocked && typeof renderLeaderReportsList === 'function') renderLeaderReportsList();
 
@@ -2289,10 +2365,7 @@ function setCommissionTracking(member, monthKey, value){
 function computeCommissionsData(leaderId, monthKey){
   const leader = members.find(m => m.id === leaderId);
   const prevMonthKey = getPreviousMonthKey(monthKey);
-  const prevTeam = buildTeamForCommissions(leaderId, prevMonthKey);
-  const ownPtsPrev = getMemberMonthPoints(leader, prevMonthKey);
-  const prevCompraTotal = (ownPtsPrev && ownPtsPrev.p1 != null ? ownPtsPrev.p1 : 0) + (ownPtsPrev && ownPtsPrev.p2 != null ? ownPtsPrev.p2 : 0);
-  let rankInfo = calcularRango(prevTeam, prevCompraTotal);
+  let rankInfo = getMonthlyRankInfo(leaderId, prevMonthKey);
 
   const manualKey = getManualRank(leader, monthKey);
   const isManual = !!(manualKey && RANK_BY_KEY[manualKey]);
@@ -2567,6 +2640,114 @@ document.getElementById('backToAdminFromRankHistoryBtn').addEventListener('click
 });
 
 document.getElementById('downloadRankHistoryBtn').addEventListener('click', downloadRankHistoryExcel);
+
+/* ---- Historial de comisiones ---- */
+
+function buildCommissionHistoryData(monthsCount){
+  const months = generateRecentMonths(monthsCount).slice().reverse(); // de más antiguo a más reciente, incluye el mes en curso
+  const leaderIds = new Set(members.map(m => m.leaderId).filter(Boolean));
+  const leaders = members
+    .filter(m => leaderIds.has(m.id))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+  const round2 = n => Math.round(n * 100) / 100;
+
+  const rows = leaders.map(m => {
+    let acumulado = 0;
+    const amounts = months.map(mk => {
+      const {periodo1, periodo2} = computeCommissionsData(m.id, mk);
+      const noAplica = periodo1.gated && periodo2.gated;
+      const total = noAplica ? 0 : round2(periodo1.totalComision + periodo2.totalComision);
+      if(!noAplica) acumulado += total;
+      return {total, noAplica};
+    });
+    return {member: m, amounts, acumulado: round2(acumulado)};
+  });
+
+  return {months, rows};
+}
+
+function setCommissionHistoryStatus(msg, isErr){
+  const el = document.getElementById('commissionHistoryStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+function fmtMoney(n){
+  return `$${n.toLocaleString('es-MX', {minimumFractionDigits:2})}`;
+}
+
+function renderCommissionHistoryTable(){
+  const {months, rows} = buildCommissionHistoryData(6);
+  const table = document.getElementById('commissionHistoryTable');
+
+  if(rows.length === 0){
+    table.innerHTML = '';
+    setCommissionHistoryStatus('Todavía no hay ningún líder con equipo propio.', true);
+    return;
+  }
+  setCommissionHistoryStatus('', false);
+
+  const currentMonth = getPeriodInfo().monthKey;
+  const headerHtml = `<tr><th>Líder</th>${months.map(mk => `<th>${monthKeyLabel(mk)}${mk === currentMonth ? ' (en curso)' : ''}</th>`).join('')}<th>Acumulado</th></tr>`;
+
+  const bodyHtml = rows.map(r => {
+    const cells = r.amounts.map(a => a.noAplica
+      ? `<td><span class="ch-na">No aplica</span></td>`
+      : `<td>${fmtMoney(a.total)}</td>`
+    ).join('');
+    return `<tr><td>${escapeHtml(r.member.fullName)}</td>${cells}<td class="ch-total-col">${fmtMoney(r.acumulado)}</td></tr>`;
+  }).join('');
+
+  table.innerHTML = `<thead>${headerHtml}</thead><tbody>${bodyHtml}</tbody>`;
+}
+
+function downloadCommissionHistoryExcel(){
+  if(typeof XLSX === 'undefined'){
+    setCommissionHistoryStatus(window.__xlsxState === 'error' ? 'No se pudo cargar la función de Excel: revisa tu internet.' : 'Todavía está cargando la función de Excel. Espera unos segundos.', true);
+    return;
+  }
+  const {months, rows} = buildCommissionHistoryData(6);
+  if(rows.length === 0){
+    setCommissionHistoryStatus('Todavía no hay ningún líder con equipo propio.', true);
+    return;
+  }
+
+  const aoa = [
+    ['Historial de comisiones'],
+    [],
+    ['Líder', ...months.map(mk => monthKeyLabel(mk)), 'Acumulado'],
+    ...rows.map(r => [
+      r.member.fullName,
+      ...r.amounts.map(a => a.noAplica ? 'No aplica' : a.total),
+      r.acumulado
+    ])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:28}, ...months.map(() => ({wch:14})), {wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Historial comisiones');
+  XLSX.writeFile(wb, `historial-comisiones-${months[months.length - 1]}.xlsx`);
+  setCommissionHistoryStatus('Historial de comisiones descargado.', false);
+}
+
+document.getElementById('openCommissionHistoryBtn').addEventListener('click', () => {
+  if(!unlocked) return;
+  document.getElementById('adminPage').style.display = 'none';
+  document.getElementById('commissionHistoryPage').style.display = '';
+  window.scrollTo(0, 0);
+  renderCommissionHistoryTable();
+});
+
+document.getElementById('backToAdminFromCommissionHistoryBtn').addEventListener('click', () => {
+  document.getElementById('commissionHistoryPage').style.display = 'none';
+  document.getElementById('adminPage').style.display = '';
+  window.scrollTo(0, 0);
+});
+
+document.getElementById('downloadCommissionHistoryBtn').addEventListener('click', downloadCommissionHistoryExcel);
 
 document.getElementById('openLeaderReportsBtn').addEventListener('click', () => {
   if(!unlocked) return;
@@ -2895,10 +3076,10 @@ function buildTeamForCommissions(leaderId, monthKey){
     });
 }
 
-function calcularRango(team, compraLiderTotal){
+function calcularRango(team, compraLiderTotal, produccionOverride){
   const totales = team.map(t => t.p1 + t.p2);
   const activas = totales.filter(total => total > COMISION_ACTIVE_MIN);
-  const produccion = totales.reduce((s, t) => s + t, 0);
+  const produccion = produccionOverride != null ? produccionOverride : totales.reduce((s, t) => s + t, 0);
   const calificadas = activas.filter(total => total >= COMISION_QUALIFIED_MIN).length;
   const pctCalificado = activas.length ? (calificadas / activas.length) * 100 : 0;
 
@@ -2910,6 +3091,60 @@ function calcularRango(team, compraLiderTotal){
     }
   }
   return {activas: activas.length, produccion, pctCalificado, rango};
+}
+
+function getRankTierFromProduction(prod){
+  for(const r of RANKS){
+    if(prod >= r.produccion) return r;
+  }
+  return RANK_BY_KEY.sinRango;
+}
+
+function computeEffectiveTeamForRango(leaderId, monthKey){
+  const team = buildTeamForCommissions(leaderId, monthKey);
+  const prodP1 = team.reduce((s, t) => s + t.p1, 0);
+  const prodP2 = team.reduce((s, t) => s + t.p2, 0);
+  const prodNormal = prodP1 + prodP2;
+
+  const tierP1 = getRankTierFromProduction(prodP1);
+  if(tierP1.key === 'sinRango'){
+    return {team, effectiveProduccion: prodNormal};
+  }
+
+  const alreadyReached = hasLeaderEverReachedRank(leaderId, tierP1.key, monthKey);
+  if(alreadyReached){
+    return {team, effectiveProduccion: prodNormal};
+  }
+
+  // Primera vez que el equipo llega a ese rango: el Periodo 2 se evalúa solo,
+  // buscando un rango todavía más alto; si no lo logra, se queda con lo de Periodo 1.
+  const tierP2 = getRankTierFromProduction(prodP2);
+  const effectiveProduccion = (RANK_ORDER[tierP2.key] > RANK_ORDER[tierP1.key]) ? prodP2 : prodP1;
+  return {team, effectiveProduccion};
+}
+
+function getMonthlyRankInfo(leaderId, monthKey){
+  const {team, effectiveProduccion} = computeEffectiveTeamForRango(leaderId, monthKey);
+  const leader = members.find(m => m.id === leaderId);
+  const ownPts = getMemberMonthPoints(leader, monthKey);
+  const compraTotal = (ownPts && ownPts.p1 != null ? ownPts.p1 : 0) + (ownPts && ownPts.p2 != null ? ownPts.p2 : 0);
+  return calcularRango(team, compraTotal, effectiveProduccion);
+}
+
+function hasLeaderEverReachedRank(leaderId, rankKey, beforeMonthKey){
+  const order = RANK_ORDER[rankKey];
+  if(!order) return true; // sinRango siempre "alcanzado"
+
+  const leader = members.find(m => m.id === leaderId);
+  const months = collectAvailableMonths().filter(mk => mk < beforeMonthKey);
+
+  for(const mk of months){
+    const manualKey = getManualRank(leader, mk);
+    if(manualKey && RANK_ORDER[manualKey] >= order) return true;
+    const info = getMonthlyRankInfo(leaderId, mk);
+    if(RANK_ORDER[info.rango.key] >= order) return true;
+  }
+  return false;
 }
 
 function minCompraPeriodo(rangoKey){
@@ -3205,19 +3440,44 @@ function render(){
 
 let usingLocalFallback = false;
 
+// Junta a todas las personas (una por documento) en el mismo formato de
+// arreglo que el resto del código ya espera. El orden se fija por id para
+// que dos lecturas seguidas den el mismo texto si nada cambió de verdad
+// (esto es lo que usa saveMembersMerged para detectar choques reales).
+async function cargarArregloMiembrosDesdeFirestore(){
+  const snap = await db.collection(ARBOL_MIEMBROS_COLLECTION).get();
+  const miembros = snap.docs.map(d => d.data());
+  miembros.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  return miembros;
+}
+
+// Guarda el arreglo completo repartiéndolo en documentos individuales (uno
+// por persona), y borra a quien ya no venga en el arreglo nuevo.
+async function guardarArregloMiembrosEnFirestore(nuevosMiembros){
+  const snap = await db.collection(ARBOL_MIEMBROS_COLLECTION).get();
+  const idsNuevos = new Set(nuevosMiembros.map(m => m.id));
+  const borrados = snap.docs.filter(d => !idsNuevos.has(d.id)).map(d => d.ref.delete());
+  const guardados = nuevosMiembros.map(m => db.collection(ARBOL_MIEMBROS_COLLECTION).doc(m.id).set(m));
+  await Promise.all([...borrados, ...guardados]);
+}
+
 async function storageGet(key, shared){
-  // Datos compartidos (el árbol): Firestore, para que todas vean lo mismo
-  if(shared && db){
+  if(shared && db && key === DATA_KEY){
+    try{
+      const miembros = await cargarArregloMiembrosDesdeFirestore();
+      return {key, value: JSON.stringify(miembros), shared};
+    }catch(e){
+      console.error('Error leyendo el equipo de Firestore', e);
+      usingLocalFallback = true;
+    }
+  }else if(shared && db){
     try{
       const snap = await db.collection(ARBOL_COLLECTION).doc(key).get();
-      if(snap.exists){
-        return {key, value: snap.data().value, shared};
-      }
+      if(snap.exists) return {key, value: snap.data().value, shared};
       return null;
     }catch(e){
       console.error('Error leyendo de Firestore', e);
       usingLocalFallback = true;
-      /* sigue con el respaldo local */
     }
   }
   if(window.storage && typeof window.storage.get === 'function'){
@@ -3225,7 +3485,6 @@ async function storageGet(key, shared){
       return await window.storage.get(key, shared);
     }catch(e){ /* fall through to local backup */ }
   }
-  // Datos solo del dispositivo (ej. a quién está viendo esta pantalla): localStorage
   usingLocalFallback = true;
   try{
     const raw = localStorage.getItem('arbolEquipoMW_' + key);
@@ -3236,7 +3495,16 @@ async function storageGet(key, shared){
 }
 
 async function storageSet(key, value, shared){
-  if(shared && db){
+  if(shared && db && key === DATA_KEY){
+    try{
+      const nuevosMiembros = JSON.parse(value);
+      await guardarArregloMiembrosEnFirestore(nuevosMiembros);
+      return {key, value, shared};
+    }catch(e){
+      console.error('Error guardando el equipo en Firestore', e);
+      usingLocalFallback = true;
+    }
+  }else if(shared && db){
     try{
       await db.collection(ARBOL_COLLECTION).doc(key).set({
         value,
@@ -3246,7 +3514,6 @@ async function storageSet(key, value, shared){
     }catch(e){
       console.error('Error guardando en Firestore', e);
       usingLocalFallback = true;
-      /* sigue con el respaldo local para no perder el cambio */
     }
   }
   if(window.storage && typeof window.storage.set === 'function'){
@@ -3331,6 +3598,64 @@ async function saveMembers(){
   const result = await storageSet(DATA_KEY, JSON.stringify(members), true);
   updateStorageModeBadge();
   return !!result;
+}
+
+// Guardado "seguro" para cambios puntuales (como puntos): relee lo más reciente
+// justo antes de guardar, aplica el cambio sobre eso, y así evita que dos cargas
+// casi al mismo tiempo (dos periodos, dos dispositivos) se pisen entre sí.
+// Guardado "seguro" para cambios puntuales (como puntos): relee lo más reciente
+// justo antes de guardar, aplica el cambio sobre eso, y así evita que dos cargas
+// casi al mismo tiempo (dos periodos, dos dispositivos) se pisen entre sí.
+// Además, verifica después de guardar que nadie más haya guardado en el mismo instante;
+// si eso pasó, vuelve a aplicar el cambio sobre lo más reciente (hasta 4 intentos).
+async function saveMembersMerged(mutateFn){
+  const maxAttempts = 4;
+  let lastFreshMembers = null;
+
+  for(let attempt = 0; attempt < maxAttempts; attempt++){
+    let freshMembers;
+    try{
+      const result = await storageGet(DATA_KEY, true);
+      freshMembers = result ? JSON.parse(result.value) : [];
+      freshMembers.forEach(migrateLegacyPoints);
+    }catch(e){
+      freshMembers = members;
+    }
+
+    const mutateResult = mutateFn(freshMembers);
+    if(mutateResult === false){
+      return 'aborted';
+    }
+    const payload = JSON.stringify(freshMembers);
+    lastFreshMembers = freshMembers;
+
+    const ok = await storageSet(DATA_KEY, payload, true);
+    if(!ok){
+      updateStorageModeBadge();
+      return false;
+    }
+
+    let verify;
+    try{
+      verify = await storageGet(DATA_KEY, true);
+    }catch(e){
+      verify = null;
+    }
+
+    if(verify && verify.value === payload){
+      members = freshMembers;
+      updateStorageModeBadge();
+      return true;
+    }
+    // Alguien más guardó justo en ese instante: se reintenta el cambio
+    // sobre los datos más recientes (que ya incluyen esa otra escritura).
+  }
+
+  // Se agotaron los intentos por escrituras simultáneas muy seguidas;
+  // de todos modos queda guardado el último intento.
+  if(lastFreshMembers) members = lastFreshMembers;
+  updateStorageModeBadge();
+  return true;
 }
 
 async function saveViewer(id){
@@ -3481,12 +3806,43 @@ function runSearch(){
 document.getElementById('prevMatchBtn').addEventListener('click', () => goToMatch(currentMatchIndex - 1));
 document.getElementById('nextMatchBtn').addEventListener('click', () => goToMatch(currentMatchIndex + 1));
 
+function updateClearSearchBtn(){
+  const input = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  clearBtn.style.display = input.value ? 'flex' : 'none';
+}
+
+function wireClearableInput(inputId){
+  const input = document.getElementById(inputId);
+  const btn = document.querySelector(`.input-clear-btn[data-target="${inputId}"]`);
+  if(!input || !btn) return;
+  const update = () => { btn.style.display = input.value ? 'flex' : 'none'; };
+  input.addEventListener('input', update);
+  btn.addEventListener('click', () => {
+    input.value = '';
+    update();
+    input.dispatchEvent(new Event('input', {bubbles: true}));
+    input.focus();
+  });
+}
+
+['viewerSearchInput', 'leaderSearchInput', 'pwPersonSearch', 'reassignPersonSearch', 'reassignNewLeaderSearch', 'leaderReportsSearch']
+  .forEach(wireClearableInput);
+
 document.getElementById('searchBtn').addEventListener('click', runSearch);
+document.getElementById('searchInput').addEventListener('input', updateClearSearchBtn);
 document.getElementById('searchInput').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){
     e.preventDefault();
     runSearch();
   }
+});
+document.getElementById('clearSearchBtn').addEventListener('click', () => {
+  const input = document.getElementById('searchInput');
+  input.value = '';
+  updateClearSearchBtn();
+  runSearch();
+  input.focus();
 });
 
 document.getElementById('brandLogo').style.display = 'none';
@@ -3778,25 +4134,32 @@ document.getElementById('confirmPointsBtn').addEventListener('click', async () =
   let matched = 0;
   const skipped = [];
 
-  pointsPreviewRows.forEach(r => {
-    if(!r.memberId){ skipped.push(r.excelName); return; }
-    const member = members.find(m => m.id === r.memberId);
-    if(!member){ skipped.push(r.excelName); return; }
-
-    const existing = getMemberMonthPoints(member, monthKey) || {p1: null, p2: null};
-    const enteredVal = r.points === '' ? 0 : (floorPts(r.points) || 0);
-    const targetValue = pointsPreviewAddMode ? (r.existing + enteredVal) : (r.points === '' ? null : enteredVal);
-    const newP1 = pointsPreviewTargetPeriod === 1 ? targetValue : existing.p1;
-    const newP2 = pointsPreviewTargetPeriod === 2 ? targetValue : existing.p2;
-    setMemberMonthPoints(member, monthKey, newP1, newP2);
-    matched++;
-  });
-
   const confirmBtn = document.getElementById('confirmPointsBtn');
   confirmBtn.disabled = true;
   setExcelStatus('Guardando...', false);
 
-  const ok = await saveMembers();
+  const ok = await saveMembersMerged((freshMembers) => {
+    pointsPreviewRows.forEach(r => {
+      if(!r.memberId){ skipped.push(r.excelName); return; }
+      const member = freshMembers.find(m => m.id === r.memberId);
+      if(!member){ skipped.push(r.excelName); return; }
+
+      // Se relee el valor más reciente de este periodo justo antes de guardar,
+      // en vez de usar lo que tenía en caché la vista previa, para no pisar
+      // otra carga que se haya guardado mientras tanto (por ejemplo, el otro periodo).
+      const existing = getMemberMonthPoints(member, monthKey) || {p1: null, p2: null};
+      const enteredVal = r.points === '' ? 0 : (floorPts(r.points) || 0);
+      const baseExisting = pointsPreviewTargetPeriod === 1
+        ? (existing.p1 != null ? existing.p1 : 0)
+        : (existing.p2 != null ? existing.p2 : 0);
+      const targetValue = pointsPreviewAddMode ? (baseExisting + enteredVal) : (r.points === '' ? null : enteredVal);
+      const newP1 = pointsPreviewTargetPeriod === 1 ? targetValue : existing.p1;
+      const newP2 = pointsPreviewTargetPeriod === 2 ? targetValue : existing.p2;
+      setMemberMonthPoints(member, monthKey, newP1, newP2);
+      matched++;
+    });
+  });
+
   if(ok){
     touchPointsUpdate();
     render();
@@ -3828,17 +4191,18 @@ document.getElementById('clearPointsBtn').addEventListener('click', async () => 
   const monthLabel = monthKeyLabel(targetMonthKey);
   const ok = confirm(`Esto borrará los puntos de ${monthLabel} de todas las personas (los demás meses no se tocan). ¿Continuar?`);
   if(!ok) return;
-  members.forEach(m => {
-    if(m.pointsHistory && m.pointsHistory[targetMonthKey]){
-      delete m.pointsHistory[targetMonthKey];
-    }
-    if(m.pointsMonthKey === targetMonthKey){
-      m.pointsMonthKey = null;
-      m.pointsP1 = null;
-      m.pointsP2 = null;
-    }
+  const saved = await saveMembersMerged((freshMembers) => {
+    freshMembers.forEach(m => {
+      if(m.pointsHistory && m.pointsHistory[targetMonthKey]){
+        delete m.pointsHistory[targetMonthKey];
+      }
+      if(m.pointsMonthKey === targetMonthKey){
+        m.pointsMonthKey = null;
+        m.pointsP1 = null;
+        m.pointsP2 = null;
+      }
+    });
   });
-  const saved = await saveMembers();
   if(saved){
     touchPointsUpdate();
     render();
@@ -3967,6 +4331,11 @@ document.getElementById('joinForm').addEventListener('submit', async (e) => {
     setStatus('Escribe el nombre completo.', true);
     return;
   }
+  const nameDuplicate = members.find(m => normalizeNameForMatch(m.fullName) === normalizeNameForMatch(fullName));
+  if(nameDuplicate){
+    setStatus(`Ya existe alguien registrado con ese nombre (${nameDuplicate.fullName}). Si es la misma persona, no hace falta volver a registrarla.`, true);
+    return;
+  }
   if(!ticketNumber){
     setStatus('Escribe el número de ticket. Sin ese dato no se puede guardar en el árbol.', true);
     return;
@@ -3992,8 +4361,22 @@ document.getElementById('joinForm').addEventListener('submit', async (e) => {
     joinedAt: joinedAt.value,
     firstPurchaseAt: firstPurchaseAt.value || null
   };
-  members.push(newMember);
-  const ok = await saveMembers();
+
+  let freshDuplicate = null;
+  const ok = await saveMembersMerged((freshMembers) => {
+    const dup = freshMembers.find(m => normalizeNameForMatch(m.fullName) === normalizeNameForMatch(fullName));
+    if(dup){
+      freshDuplicate = dup;
+      return false;
+    }
+    freshMembers.push(newMember);
+  });
+
+  if(freshDuplicate){
+    setStatus(`Ya existe alguien registrado con ese nombre (${freshDuplicate.fullName}). No se guardó de nuevo.`, true);
+    btn.disabled = false;
+    return;
+  }
 
   if(ok){
     touchTreeUpdate();
@@ -4007,7 +4390,6 @@ document.getElementById('joinForm').addEventListener('submit', async (e) => {
     firstPurchaseAt.value = '';
     joinedAt.value = new Date().toISOString().slice(0,10);
   }else{
-    members.pop();
     setStatus('No se pudo guardar. Intenta de nuevo.', true);
   }
   btn.disabled = false;
