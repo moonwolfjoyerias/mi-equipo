@@ -1219,7 +1219,7 @@ try{
   // streaming SOLO si detecta que el streaming no funciona (a diferencia de
   // "force", nunca se debe combinar con otra bandera de long polling o
   // Firestore lanza un error fatal al iniciar).
-  db.settings({ experimentalAutoDetectLongPolling: true });
+  db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
 }catch(e){
   console.error('No se pudo inicializar Firebase', e);
 }
