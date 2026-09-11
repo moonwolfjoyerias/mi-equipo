@@ -1215,8 +1215,11 @@ try{
   db = firebase.firestore();
   // Algunos navegadores (ej. Edge/Brave con "Tracking Prevention") bloquean el
   // mecanismo de streaming en tiempo real que usa Firestore por defecto.
-  // Forzar "long polling" evita ese bloqueo y usa peticiones normales en su lugar.
-  db.settings({ experimentalForceLongPolling: true });
+  // "autoDetect" deja que Firestore decida usar peticiones normales en vez de
+  // streaming SOLO si detecta que el streaming no funciona (a diferencia de
+  // "force", nunca se debe combinar con otra bandera de long polling o
+  // Firestore lanza un error fatal al iniciar).
+  db.settings({ experimentalAutoDetectLongPolling: true });
 }catch(e){
   console.error('No se pudo inicializar Firebase', e);
 }
