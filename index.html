@@ -1610,6 +1610,10 @@ function buildMembersFromRows(rows){
     delete m._leaderNameRaw;
   });
 
+  if(newMembers.length === 0){
+    return {error: 'Ninguna fila tiene un nombre válido en la columna de nombre. Si tu Excel tiene varias hojas/pestañas, revisa que los datos estén en la PRIMERA hoja del archivo.'};
+  }
+
   return {members: newMembers, unresolvedLeaders};
 }
 
@@ -1781,7 +1785,11 @@ document.getElementById('importBtn').addEventListener('click', async () => {
     }
 
     pendingImport = result;
-    setImportStatus(`Esto reemplazará todo el árbol actual con las ${result.members.length} persona(s) del Excel. Confirma abajo para continuar.`, false);
+    let importMsg = `Esto BORRARÁ a las ${members.length} persona(s) que hay ahora y las reemplazará con las ${result.members.length} persona(s) del Excel. Confirma abajo para continuar.`;
+    if(result.members.length < members.length){
+      importMsg = `⚠️ ATENCIÓN: el Excel solo trae ${result.members.length} persona(s), menos que las ${members.length} que ya existen. Si confirmas, se BORRARÁN permanentemente ${members.length - result.members.length} persona(s) que no están en el archivo. ¿Seguro que es el archivo correcto?`;
+    }
+    setImportStatus(importMsg, result.members.length < members.length);
     importBtn.style.display = 'none';
     document.getElementById('confirmImportBtn').style.display = '';
     document.getElementById('cancelImportBtn').style.display = '';
