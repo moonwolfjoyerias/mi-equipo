@@ -110,6 +110,8 @@
 
   .status{font-size:12px; color:var(--lilac-deep); min-height:16px;}
   .status.err{color:var(--danger);}
+  button.danger{background:var(--danger); border-color:var(--danger); color:#fff;}
+  button.danger:hover{filter:brightness(0.92);}
 
   .viewer-row{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;}
   .viewer-row .field{flex:1; min-width:220px;}
@@ -1004,6 +1006,58 @@
     </div>
 
     <div class="card">
+      <h2>Editar o eliminar persona</h2>
+      <div class="hint">Busca a la persona para corregir sus datos o eliminarla del árbol. Si eliminas a alguien con equipo, su equipo directo pasa a depender de su líder (o queda sin líder si era la raíz).</div>
+      <div class="locked-hint" id="editPersonLockedHint">Desbloquea la edición arriba para editar o eliminar personas.</div>
+      <fieldset id="editPersonFieldset" disabled>
+        <div class="field" style="position:relative; max-width:340px;">
+          <label for="editPersonSearch">Persona</label>
+          <div class="clearable-input">
+            <input type="text" id="editPersonSearch" placeholder="Escribe su nombre..." autocomplete="off">
+            <button type="button" class="input-clear-btn" data-target="editPersonSearch" aria-label="Borrar" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+          </div>
+          <div class="suggestions-list" id="editPersonSuggestions" style="display:none;"></div>
+        </div>
+        <div id="editPersonRow" style="display:none; flex-direction:column; gap:14px; margin-top:14px;">
+          <div class="field">
+            <label for="editFullName">Nombre completo</label>
+            <input type="text" id="editFullName" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="editClientCode">Membresía (opcional)</label>
+            <input type="text" id="editClientCode" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="editTicketNumber">Número de ticket</label>
+            <input type="text" id="editTicketNumber" autocomplete="off">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="editJoinedAt">Fecha en que se integra</label>
+              <input type="date" id="editJoinedAt">
+            </div>
+            <div class="field">
+              <label for="editFirstPurchaseAt">Fecha de primera compra</label>
+              <input type="date" id="editFirstPurchaseAt">
+            </div>
+          </div>
+          <div class="viewer-row">
+            <button type="button" id="saveEditPersonBtn">Guardar cambios</button>
+            <button type="button" id="deletePersonBtn" class="secondary">Eliminar persona</button>
+          </div>
+          <div id="deletePersonConfirm" style="display:none; margin-top:12px;">
+            <div class="hint" id="deletePersonConfirmText"></div>
+            <div class="viewer-row">
+              <button type="button" id="confirmDeletePersonBtn" class="danger">Sí, eliminar</button>
+              <button type="button" id="cancelDeletePersonBtn" class="secondary">Cancelar</button>
+            </div>
+          </div>
+        </div>
+        <div class="status" id="editPersonStatus"></div>
+      </fieldset>
+    </div>
+
+    <div class="card">
       <h2>Reportes de puntos por líder</h2>
       <div class="hint">Ve el nombre de cada líder y descarga directo el reporte de puntos de su equipo, sin necesitar su contraseña de acceso.</div>
       <div class="locked-hint" id="leaderReportsLockedHint">Desbloquea la edición arriba para entrar a esta sección.</div>
@@ -1564,6 +1618,7 @@ function updateLockUI(){
   const importFieldset = document.getElementById('importFieldset');
   const passwordsFieldset = document.getElementById('passwordsFieldset');
   const reassignFieldset = document.getElementById('reassignFieldset');
+  const editPersonFieldset = document.getElementById('editPersonFieldset');
   const leaderReportsFieldset = document.getElementById('leaderReportsFieldset');
   const raffleFieldset = document.getElementById('raffleFieldset');
   const rankHistoryFieldset = document.getElementById('rankHistoryFieldset');
@@ -1572,6 +1627,7 @@ function updateLockUI(){
   const importHint = document.getElementById('importLockedHint');
   const passwordsHint = document.getElementById('passwordsLockedHint');
   const reassignHint = document.getElementById('reassignLockedHint');
+  const editPersonHint = document.getElementById('editPersonLockedHint');
   const leaderReportsHint = document.getElementById('leaderReportsLockedHint');
   const raffleHint = document.getElementById('raffleLockedHint');
   const rankHistoryHint = document.getElementById('rankHistoryLockedHint');
@@ -1582,6 +1638,7 @@ function updateLockUI(){
   importFieldset.disabled = !unlocked;
   passwordsFieldset.disabled = !unlocked;
   reassignFieldset.disabled = !unlocked;
+  editPersonFieldset.disabled = !unlocked;
   leaderReportsFieldset.disabled = !unlocked;
   raffleFieldset.disabled = !unlocked;
   rankHistoryFieldset.disabled = !unlocked;
@@ -1590,6 +1647,7 @@ function updateLockUI(){
   importHint.style.display = unlocked ? 'none' : 'block';
   passwordsHint.style.display = unlocked ? 'none' : 'block';
   reassignHint.style.display = unlocked ? 'none' : 'block';
+  editPersonHint.style.display = unlocked ? 'none' : 'block';
   leaderReportsHint.style.display = unlocked ? 'none' : 'block';
   raffleHint.style.display = unlocked ? 'none' : 'block';
   rankHistoryHint.style.display = unlocked ? 'none' : 'block';
@@ -2281,6 +2339,203 @@ document.getElementById('saveReassignBtn').addEventListener('click', async () =>
     document.getElementById('reassignCurrentLeader').textContent = `Líder actual: ${newLeaderId ? leaderName : 'ninguno (es raíz del árbol)'}`;
   }else{
     setReassignStatus('No se pudo guardar. Intenta de nuevo.', true);
+  }
+});
+
+function setEditPersonStatus(msg, isErr){
+  const el = document.getElementById('editPersonStatus');
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+let editPersonId = null;
+
+function hideDeletePersonConfirm(){
+  document.getElementById('deletePersonConfirm').style.display = 'none';
+}
+
+function resetEditPersonForm(){
+  editPersonId = null;
+  document.getElementById('editPersonRow').style.display = 'none';
+  hideDeletePersonConfirm();
+}
+
+function fillEditPersonForm(m){
+  document.getElementById('editFullName').value = m.fullName || '';
+  document.getElementById('editClientCode').value = m.clientCode || '';
+  document.getElementById('editTicketNumber').value = m.ticketNumber || '';
+  document.getElementById('editJoinedAt').value = m.joinedAt || '';
+  document.getElementById('editFirstPurchaseAt').value = m.firstPurchaseAt || '';
+}
+
+function renderEditPersonSuggestions(){
+  const input = document.getElementById('editPersonSearch');
+  const list = document.getElementById('editPersonSuggestions');
+  const term = input.value.trim().toLowerCase();
+  if(!term){ list.style.display = 'none'; list.innerHTML = ''; return; }
+
+  const matches = members
+    .map((m, i) => ({m, label: labelFor(m, i)}))
+    .filter(x => x.label.toLowerCase().includes(term))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    list.innerHTML = `<div class="suggestion-empty">Nadie coincide con ese nombre.</div>`;
+    list.style.display = '';
+    return;
+  }
+
+  list.innerHTML = matches.map(x => `<div class="suggestion-item" data-id="${x.m.id}">${escapeHtml(x.label)}</div>`).join('');
+  list.style.display = '';
+
+  list.querySelectorAll('.suggestion-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const m = members.find(x => x.id === el.dataset.id);
+      if(!m) return;
+      editPersonId = m.id;
+      input.value = el.textContent;
+      list.style.display = 'none';
+      fillEditPersonForm(m);
+      hideDeletePersonConfirm();
+      document.getElementById('editPersonRow').style.display = 'flex';
+      setEditPersonStatus('', false);
+    });
+  });
+}
+
+document.getElementById('editPersonSearch').addEventListener('input', () => {
+  resetEditPersonForm();
+  renderEditPersonSuggestions();
+});
+document.getElementById('editPersonSearch').addEventListener('focus', renderEditPersonSuggestions);
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('editPersonSearch').closest('.field');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('editPersonSuggestions').style.display = 'none';
+  }
+});
+
+document.getElementById('saveEditPersonBtn').addEventListener('click', async () => {
+  if(!unlocked || !editPersonId) return;
+  const fullName = document.getElementById('editFullName').value.trim();
+  const clientCode = cleanCodeValue(document.getElementById('editClientCode').value);
+  const ticketNumber = document.getElementById('editTicketNumber').value.trim();
+  const joinedAt = document.getElementById('editJoinedAt').value;
+  const firstPurchaseAt = document.getElementById('editFirstPurchaseAt').value || null;
+
+  if(!fullName){
+    setEditPersonStatus('Escribe el nombre completo.', true);
+    return;
+  }
+  if(!ticketNumber){
+    setEditPersonStatus('Escribe el número de ticket.', true);
+    return;
+  }
+  if(!joinedAt){
+    setEditPersonStatus('Escribe la fecha en que se integra.', true);
+    return;
+  }
+  const findDuplicate = (list) => list.find(m =>
+    m.id !== editPersonId && normalizeNameForMatch(m.fullName) === normalizeNameForMatch(fullName));
+  const localDup = findDuplicate(members);
+  if(localDup){
+    setEditPersonStatus(`Ya existe otra persona con ese nombre (${localDup.fullName}).`, true);
+    return;
+  }
+
+  const btn = document.getElementById('saveEditPersonBtn');
+  btn.disabled = true;
+  setEditPersonStatus('Guardando...', false);
+
+  let failReason = null;
+  const targetId = editPersonId;
+  const ok = await saveMembersMerged((freshMembers) => {
+    const person = freshMembers.find(m => m.id === targetId);
+    if(!person){ failReason = 'missing'; return false; }
+    const dup = findDuplicate(freshMembers);
+    if(dup){ failReason = `Ya existe otra persona con ese nombre (${dup.fullName}).`; return false; }
+    person.fullName = fullName;
+    person.clientCode = clientCode;
+    person.ticketNumber = ticketNumber;
+    person.joinedAt = joinedAt;
+    person.firstPurchaseAt = firstPurchaseAt;
+  });
+  btn.disabled = false;
+
+  if(failReason === 'missing'){
+    render();
+    resetEditPersonForm();
+    setEditPersonStatus('Esa persona ya no existe en el árbol (quizá alguien más la eliminó).', true);
+    return;
+  }
+  if(failReason){
+    setEditPersonStatus(failReason, true);
+    return;
+  }
+  if(ok){
+    touchTreeUpdate();
+    render();
+    document.getElementById('editPersonSearch').value = fullName;
+    setEditPersonStatus(`Listo: se guardaron los datos de ${fullName}.`, false);
+  }else{
+    setEditPersonStatus('No se pudo guardar. Intenta de nuevo.', true);
+  }
+});
+
+document.getElementById('deletePersonBtn').addEventListener('click', () => {
+  if(!unlocked || !editPersonId) return;
+  const person = members.find(m => m.id === editPersonId);
+  if(!person) return;
+  const directCount = members.filter(m => m.leaderId === person.id).length;
+  const leader = person.leaderId ? members.find(m => m.id === person.leaderId) : null;
+  let text = `¿Seguro que quieres eliminar a ${person.fullName}? Se borrarán también sus puntos e historial. Esta acción no se puede deshacer.`;
+  if(directCount > 0){
+    text += leader
+      ? ` Su equipo directo (${directCount} ${directCount === 1 ? 'persona' : 'personas'}) pasará a depender de ${leader.fullName}.`
+      : ` Su equipo directo (${directCount} ${directCount === 1 ? 'persona' : 'personas'}) quedará sin líder.`;
+  }
+  document.getElementById('deletePersonConfirmText').textContent = text;
+  document.getElementById('deletePersonConfirm').style.display = 'block';
+  setEditPersonStatus('', false);
+});
+
+document.getElementById('cancelDeletePersonBtn').addEventListener('click', hideDeletePersonConfirm);
+
+document.getElementById('confirmDeletePersonBtn').addEventListener('click', async () => {
+  if(!unlocked || !editPersonId) return;
+  const targetId = editPersonId;
+  const btn = document.getElementById('confirmDeletePersonBtn');
+  btn.disabled = true;
+  setEditPersonStatus('Eliminando...', false);
+
+  let deletedName = null;
+  const ok = await saveMembersMerged((freshMembers) => {
+    const idx = freshMembers.findIndex(m => m.id === targetId);
+    if(idx === -1) return false;
+    const person = freshMembers[idx];
+    deletedName = person.fullName;
+    freshMembers.forEach(m => {
+      if(m.leaderId === targetId) m.leaderId = person.leaderId || null;
+    });
+    freshMembers.splice(idx, 1);
+  });
+  btn.disabled = false;
+
+  if(ok === 'aborted'){
+    render();
+    resetEditPersonForm();
+    setEditPersonStatus('Esa persona ya no existe en el árbol (quizá alguien más la eliminó).', true);
+    return;
+  }
+  if(ok){
+    touchTreeUpdate();
+    render();
+    resetEditPersonForm();
+    document.getElementById('editPersonSearch').value = '';
+    document.getElementById('editPersonSearch').dispatchEvent(new Event('input', {bubbles: true}));
+    setEditPersonStatus(`Listo: ${deletedName} se eliminó del árbol.`, false);
+  }else{
+    setEditPersonStatus('No se pudo eliminar. Intenta de nuevo.', true);
   }
 });
 
@@ -3918,7 +4173,7 @@ function wireClearableInput(inputId){
   });
 }
 
-['viewerSearchInput', 'leaderSearchInput', 'pwPersonSearch', 'reassignPersonSearch', 'reassignNewLeaderSearch', 'leaderReportsSearch']
+['viewerSearchInput', 'leaderSearchInput', 'pwPersonSearch', 'reassignPersonSearch', 'reassignNewLeaderSearch', 'editPersonSearch', 'leaderReportsSearch']
   .forEach(wireClearableInput);
 
 document.getElementById('searchBtn').addEventListener('click', runSearch);
