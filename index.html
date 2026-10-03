@@ -571,6 +571,16 @@
     margin-top:14px; padding:14px; background:#DFF4E8; border-radius:8px;
     text-align:right; font-size:15px; font-weight:700; color:#1B5E3A;
   }
+  .ra-box{ max-width:900px; }
+  .ra-box .commissions-stats{ margin-bottom:10px; }
+  .ra-box .commissions-stat .cs-value{ font-size:16px; }
+  .ra-sub{ display:block; font-family:Arial, Helvetica, sans-serif; font-size:10.5px; font-weight:400; color:var(--muted); margin-top:2px; }
+  .ra-ok{ color:#227A4E; font-weight:700; }
+  .ra-no{ color:var(--danger); }
+  .ra-h3{ font-size:14px; color:var(--ink); margin:6px 0 8px; font-weight:700; }
+  .ra-table-wrap{ overflow-x:auto; margin-bottom:14px; }
+  .ra-row-win td{ background:#EFF9F3; }
+  .ra-lines summary{ cursor:pointer; font-size:14px; font-weight:700; color:var(--lilac-deep); padding:8px 0; }
   .commissions-gated-note{ font-size:11.5px; color:var(--danger); margin-bottom:8px; }
   .xlsx-badge{font-size:11px; font-weight:600; padding:5px 10px; border-radius:14px; background:#F3E9F9; color:var(--lilac-deep); display:inline-flex; align-items:center;}
   .xlsx-badge.ready{background:#DFF4E8; color:#227A4E;}
@@ -869,6 +879,7 @@
         </div>
       </div>
       <button type="button" id="openLevelSummaryBtn" class="secondary" style="margin-top:14px;"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><rect x="6" y="6" width="12" height="15" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Ver resumen por línea</button>
+      <button type="button" id="openMyRankAuditBtn" class="secondary" style="margin-top:14px;"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9Z"/></svg>Mi auditoría de rango</button>
     </div>
 
     <div class="card tree-card">
@@ -1339,6 +1350,14 @@
       <button type="button" class="modal-close" id="closeLevelSummaryBtn" aria-label="Cerrar"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
       <h2 id="levelSummaryTitle">Resumen por línea</h2>
       <div id="levelSummary"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay no-print" id="rankAuditOverlay" style="display:none;">
+    <div class="modal-box ra-box">
+      <button type="button" class="modal-close" id="closeRankAuditBtn" aria-label="Cerrar"><svg class="icon icon-tight" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+      <h2 id="rankAuditTitle">Auditoría de rango</h2>
+      <div id="rankAuditContent"></div>
     </div>
   </div>
 
@@ -2633,6 +2652,10 @@ function renderLeaderReportsList(){
             <svg class="icon icon-tight" viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
             Ver equipo por línea
           </button>
+          <button type="button" class="secondary lr-rank-audit-btn" data-id="${m.id}">
+            <svg class="icon icon-tight" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9Z"/></svg>
+            Auditoría de rango
+          </button>
           <button type="button" class="secondary lr-view-commissions-btn" data-id="${m.id}">
             <svg class="icon icon-tight" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             Ver comisiones
@@ -2678,6 +2701,12 @@ function renderLeaderReportsList(){
     btn.addEventListener('click', () => {
       renderLevelSummary(btn.dataset.id);
       document.getElementById('levelSummaryOverlay').style.display = 'flex';
+    });
+  });
+
+  list.querySelectorAll('.lr-rank-audit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      renderRankAudit(btn.dataset.id, monthKey);
     });
   });
 
@@ -2811,7 +2840,7 @@ function renderCommissionsView(leaderId, monthKey){
       <div class="commissions-stat"><div class="cs-label">Rango vigente</div><div class="cs-value">${escapeHtml(rankInfo.rango.label)}</div></div>
       <div class="commissions-stat"><div class="cs-label">${isManual ? 'Rango capturado a mano' : 'Logrado en'}</div><div class="cs-value" style="font-size:14px;">${isManual ? 'Sin mes anterior' : monthKeyLabel(prevMonthKey)}</div></div>
       <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (>${COMISION_ACTIVE_MIN} pts)</div><div class="cs-value">${rankInfo.activas}</div></div>
-      <div class="commissions-stat"><div class="cs-label">% Calificado (${monthKeyLabel(prevMonthKey)})</div><div class="cs-value">${rankInfo.pctCalificado.toFixed(1)}%</div></div>
+      <div class="commissions-stat"><div class="cs-label">Calificadas P1 / P2 (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts)</div><div class="cs-value">${rankInfo.calificadasP1} / ${rankInfo.calificadasP2}</div></div>
     </div>
     ${periodBlock('Periodo 1', periodo1)}
     ${periodBlock('Periodo 2', periodo2)}
@@ -2832,6 +2861,129 @@ function renderCommissionsView(leaderId, monthKey){
     });
   }
 }
+
+function getNextMonthKey(monthKey){
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(y, m, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function renderRankAudit(leaderId, monthKey){
+  const leader = members.find(m => m.id === leaderId);
+  if(!leader) return;
+  const fmtPts = n => Math.round(n).toLocaleString('es-MX');
+  const fmtMxn = n => '$' + (Math.round(n * 100) / 100).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const ok = b => b ? '<span class="ra-ok">✓</span>' : '<span class="ra-no">✗</span>';
+
+  const info = getMonthlyRankInfo(leaderId, monthKey);
+  const historico = getHistoricalRank(leaderId, monthKey);
+  const ref = info.referencia;
+  const nextMonthKey = getNextMonthKey(monthKey);
+  const {rankInfo: vigente, isManual, periodo1, periodo2} = computeCommissionsData(leaderId, monthKey);
+  const comisionTotal = periodo1.totalComision + periodo2.totalComision;
+  const consolidaTxt = info.consolidaEn ? ` (consolida en P${info.consolidaEn})` : '';
+
+  document.getElementById('rankAuditTitle').textContent = `Auditoría de rango — ${leader.fullName} (${monthKeyLabel(monthKey)})`;
+
+  const stat = (label, value) => `<div class="commissions-stat"><div class="cs-label">${label}</div><div class="cs-value">${value}</div></div>`;
+
+  const pruebas = info.evaluaciones.map(e => `
+    <tr class="${e.rango.key === info.rango.key ? 'ra-row-win' : ''}">
+      <td><b>${escapeHtml(e.rango.label)}</b></td>
+      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">tope por línea ${fmtPts(e.tope)}${e.consolidaEn ? ' · consolida en P' + e.consolidaEn : ''}</div></td>
+      <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}</td>
+      <td>${ok(e.okCalificadas)} ${info.calificadasP1} y ${info.calificadasP2} / ${e.rango.calificadas}</td>
+      <td>${e.rango.compraCalifica ? (e.consolidaEn ? ok(e.okCompra) + ' ' + fmtMxn(e.rango.compraLider) + (e.consolidaEn === 1 ? ' en P1 y P2' : ' en P2') : '<span class="ra-sub">' + fmtMxn(e.rango.compraLider) + ' en el periodo que consolide</span>') : '<span class="ra-sub">No condiciona el rango</span>'}</td>
+      <td>${e.rango.key === info.rango.key ? '<b class="ra-ok">Recalifica</b>' : (e.califica ? '<span class="ra-sub">También cumple</span>' : '<span class="ra-no">No</span>')}</td>
+    </tr>`).join('');
+
+  const lineas = info.lines.map(l => {
+    const excede = l.total > ref.tope;
+    return `
+      <tr>
+        <td>${escapeHtml(l.nombre)}</td>
+        <td>${l.personas}</td>
+        <td>${fmtPts(l.p1)}</td>
+        <td>${fmtPts(l.p2)}</td>
+        <td><b>${fmtPts(l.total)}</b></td>
+        <td>${fmtPts(Math.min(l.total, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('rankAuditContent').innerHTML = `
+    <div class="commissions-stats">
+      ${stat('Rango histórico', escapeHtml(historico.label))}
+      ${stat('Rango recalificado este mes', escapeHtml(info.rango.label) + `<span class="ra-sub">${consolidaTxt}</span>`)}
+    </div>
+    <div class="commissions-stats">
+      ${stat('Producción P1', fmtPts(info.produccionP1) + ' pts')}
+      ${stat('Producción P2', fmtPts(info.produccionP2) + ' pts')}
+      ${stat('Producción mensual', fmtPts(info.produccion) + ' pts')}
+    </div>
+    <div class="commissions-stats">
+      ${stat(`Activas (>${COMISION_ACTIVE_MIN} pts en el mes)`, info.activas)}
+      ${stat(`Calificadas P1 (≥${COMISION_QUALIFIED_MIN} pts)`, info.calificadasP1)}
+      ${stat(`Calificadas P2 (≥${COMISION_QUALIFIED_MIN} pts)`, info.calificadasP2)}
+    </div>
+    <div class="commissions-stats">
+      ${stat('Compra personal P1', fmtMxn(info.compraP1))}
+      ${stat('Compra personal P2', fmtMxn(info.compraP2))}
+    </div>
+    <div class="commissions-stats">
+      ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.total) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)}</span>` : '—')}
+      ${stat(`Máximo por línea (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
+      ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
+    </div>
+    <div class="commissions-stats">
+      ${stat(`Niveles que puede cobrar (desde ${monthKeyLabel(nextMonthKey)})`, rankLevelsCount(info.rango.key) + `<span class="ra-sub">${rankRatesText(info.rango.key)}</span>`)}
+      ${stat(`Comisión total de ${monthKeyLabel(monthKey)}`, fmtMxn(comisionTotal) + `<span class="ra-sub">Rango vigente: ${escapeHtml(vigente.rango.label)}${isManual ? ' (manual)' : ' (recalificado en ' + monthKeyLabel(getPreviousMonthKey(monthKey)) + ')'} · ${rankRatesText(vigente.rango.key)} · neto sin IVA</span>`)}
+    </div>
+    <div class="hint" style="margin-bottom:14px;">El rango recalificado en ${monthKeyLabel(monthKey)} se aplica a las comisiones de ${monthKeyLabel(nextMonthKey)}. Las comisiones de ${monthKeyLabel(monthKey)} se pagan con el rango vigente de este mes.</div>
+
+    <h3 class="ra-h3">Prueba de rangos (de mayor a menor)</h3>
+    <div class="ra-table-wrap">
+      <table class="commissions-table">
+        <thead><tr><th>Rango</th><th>Producción válida</th><th>Activas</th><th>Calificadas P1 y P2</th><th>Compra personal</th><th>Resultado</th></tr></thead>
+        <tbody>${pruebas}</tbody>
+      </table>
+    </div>
+
+    <details class="ra-lines" ${info.lines.length ? '' : 'open'}>
+      <summary>Producción por líneas (${info.lines.length} patrocinada(s) directa(s))</summary>
+      ${info.lines.length ? `
+      <div class="ra-table-wrap">
+        <table class="commissions-table">
+          <thead><tr><th>Patrocinada directa</th><th>Personas</th><th>P1</th><th>P2</th><th>Producción mensual</th><th>Cuenta para ${escapeHtml(ref.rango.label)}</th></tr></thead>
+          <tbody>${lineas}</tbody>
+        </table>
+      </div>` : '<div class="hint">No tiene patrocinadas directas.</div>'}
+    </details>
+  `;
+  document.getElementById('rankAuditOverlay').style.display = 'flex';
+}
+
+document.getElementById('closeRankAuditBtn').addEventListener('click', () => {
+  document.getElementById('rankAuditOverlay').style.display = 'none';
+});
+document.getElementById('rankAuditOverlay').addEventListener('click', (e) => {
+  if(e.target.id === 'rankAuditOverlay'){
+    document.getElementById('rankAuditOverlay').style.display = 'none';
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    document.getElementById('rankAuditOverlay').style.display = 'none';
+  }
+});
+
+// Vista del árbol: cada persona solo puede ver su propia auditoría.
+document.getElementById('openMyRankAuditBtn').addEventListener('click', () => {
+  if(!viewerId || !members.some(m => m.id === viewerId)){
+    setSearchStatus('Elige primero quién eres arriba para ver tu auditoría de rango.', true);
+    return;
+  }
+  renderRankAudit(viewerId, selectedMonthKey || getPeriodInfo().monthKey);
+});
 
 document.getElementById('closeCommissionsBtn').addEventListener('click', () => {
   document.getElementById('commissionsOverlay').style.display = 'none';
@@ -3414,11 +3566,14 @@ const RATE_TABLE = {
 };
 
 const RANKS = [
-  { key: "corona", label: "Corona", activas: 30, produccion: 180000, compraLider: 3000, calificado: 50 },
-  { key: "diamante", label: "Diamante", activas: 15, produccion: 75000, compraLider: 3000, calificado: 50 },
-  { key: "oro", label: "Oro", activas: 10, produccion: 52500, compraLider: 1500, calificado: 30 },
-  { key: "plata", label: "Plata", activas: 5, produccion: 22500, compraLider: 1500, calificado: 30 },
+  { key: "corona", label: "Corona", activas: 30, produccion: 180000, compraLider: 3000, compraCalifica: true, calificadas: 15 },
+  { key: "diamante", label: "Diamante", activas: 15, produccion: 75000, compraLider: 3000, compraCalifica: true, calificadas: 9 },
+  { key: "oro", label: "Oro", activas: 10, produccion: 52500, compraLider: 1500, compraCalifica: false, calificadas: 6 },
+  { key: "plata", label: "Plata", activas: 5, produccion: 22500, compraLider: 1500, compraCalifica: false, calificadas: 3 },
 ];
+
+// Máximo que una sola línea puede aportar a la calificación (50% de lo requerido).
+const RANK_LINE_CAP_PCT = 0.5;
 
 const RANK_BY_KEY = {
   sinRango: { key: "sinRango", label: "Sin rango" },
@@ -3449,75 +3604,133 @@ function buildTeamForCommissions(leaderId, monthKey){
     });
 }
 
-function calcularRango(team, compraLiderTotal, produccionOverride){
-  const totales = team.map(t => t.p1 + t.p2);
-  const activas = totales.filter(total => total > COMISION_ACTIVE_MIN);
-  const produccion = produccionOverride != null ? produccionOverride : totales.reduce((s, t) => s + t, 0);
-  const calificadas = activas.filter(total => total >= COMISION_QUALIFIED_MIN).length;
-  const pctCalificado = activas.length ? (calificadas / activas.length) * 100 : 0;
+// Calificación mensual de rango con la estructura real del árbol.
+// Cada patrocinada directa origina una línea; la producción de la línea es la suma
+// de sus puntos y los de toda su organización (sin límite de profundidad).
+// Regla del 50%: para calificar, cada línea aporta como máximo la mitad de lo
+// requerido por el rango; el excedente sigue siendo producción real (y comisiona).
+function memberPeriodPoints(m, monthKey){
+  const pts = m ? getMemberMonthPoints(m, monthKey) : null;
+  return {
+    p1: pts && pts.p1 != null ? pts.p1 : 0,
+    p2: pts && pts.p2 != null ? pts.p2 : 0
+  };
+}
 
-  let rango = {key: "sinRango", label: "Sin rango"};
-  for(const r of RANKS){
-    if(activas.length >= r.activas && produccion >= r.produccion && compraLiderTotal >= r.compraLider && pctCalificado >= r.calificado){
-      rango = r;
-      break;
+function buildChildrenMap(){
+  const map = {};
+  members.forEach(m => {
+    if(m.leaderId){
+      if(!map[m.leaderId]) map[m.leaderId] = [];
+      map[m.leaderId].push(m);
     }
-  }
-  return {activas: activas.length, produccion, pctCalificado, rango};
-}
-
-function getRankTierFromProduction(prod){
-  for(const r of RANKS){
-    if(prod >= r.produccion) return r;
-  }
-  return RANK_BY_KEY.sinRango;
-}
-
-function computeEffectiveTeamForRango(leaderId, monthKey){
-  const team = buildTeamForCommissions(leaderId, monthKey);
-  const prodP1 = team.reduce((s, t) => s + t.p1, 0);
-  const prodP2 = team.reduce((s, t) => s + t.p2, 0);
-  const prodNormal = prodP1 + prodP2;
-
-  const tierP1 = getRankTierFromProduction(prodP1);
-  if(tierP1.key === 'sinRango'){
-    return {team, effectiveProduccion: prodNormal};
-  }
-
-  const alreadyReached = hasLeaderEverReachedRank(leaderId, tierP1.key, monthKey);
-  if(alreadyReached){
-    return {team, effectiveProduccion: prodNormal};
-  }
-
-  // Primera vez que el equipo llega a ese rango: el Periodo 2 se evalúa solo,
-  // buscando un rango todavía más alto; si no lo logra, se queda con lo de Periodo 1.
-  const tierP2 = getRankTierFromProduction(prodP2);
-  const effectiveProduccion = (RANK_ORDER[tierP2.key] > RANK_ORDER[tierP1.key]) ? prodP2 : prodP1;
-  return {team, effectiveProduccion};
+  });
+  return map;
 }
 
 function getMonthlyRankInfo(leaderId, monthKey){
-  const {team, effectiveProduccion} = computeEffectiveTeamForRango(leaderId, monthKey);
   const leader = members.find(m => m.id === leaderId);
-  const ownPts = getMemberMonthPoints(leader, monthKey);
-  const compraTotal = (ownPts && ownPts.p1 != null ? ownPts.p1 : 0) + (ownPts && ownPts.p2 != null ? ownPts.p2 : 0);
-  return calcularRango(team, compraTotal, effectiveProduccion);
+  const children = buildChildrenMap();
+  const seen = new Set([leaderId]);
+  let activas = 0, calificadasP1 = 0, calificadasP2 = 0;
+
+  const lines = (children[leaderId] || []).map(direct => {
+    let p1 = 0, p2 = 0, personas = 0;
+    const stack = [direct];
+    while(stack.length){
+      const m = stack.pop();
+      if(seen.has(m.id)) continue;
+      seen.add(m.id);
+      personas++;
+      const pts = memberPeriodPoints(m, monthKey);
+      p1 += pts.p1;
+      p2 += pts.p2;
+      if(pts.p1 + pts.p2 > COMISION_ACTIVE_MIN) activas++;
+      if(pts.p1 >= COMISION_QUALIFIED_MIN) calificadasP1++;
+      if(pts.p2 >= COMISION_QUALIFIED_MIN) calificadasP2++;
+      (children[m.id] || []).forEach(c => stack.push(c));
+    }
+    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2};
+  }).sort((a, b) => b.total - a.total);
+
+  const own = memberPeriodPoints(leader, monthKey);
+  const compraP1 = own.p1;
+  const compraP2 = own.p2;
+  const produccionP1 = lines.reduce((s, l) => s + l.p1, 0);
+  const produccionP2 = lines.reduce((s, l) => s + l.p2, 0);
+
+  // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
+  const evaluaciones = RANKS.map(r => {
+    const tope = r.produccion * RANK_LINE_CAP_PCT;
+    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1, tope), 0);
+    const validaMes = lines.reduce((s, l) => s + Math.min(l.total, tope), 0);
+    // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
+    const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
+    const okProduccion = consolidaEn !== null;
+    const okActivas = activas >= r.activas;
+    const okCalificadas = calificadasP1 >= r.calificadas && calificadasP2 >= r.calificadas;
+    // Plata y Oro: la compra personal no impide calificar (solo condiciona el cobro de cada periodo).
+    // Diamante y Corona: $3,000 en el periodo en que consolida (si consolida en P1, también en P2).
+    let okCompra = true;
+    if(r.compraCalifica){
+      okCompra = consolidaEn === 1
+        ? (compraP1 >= r.compraLider && compraP2 >= r.compraLider)
+        : compraP2 >= r.compraLider;
+    }
+    return {
+      rango: r, tope, validaP1, validaMes, consolidaEn,
+      okProduccion, okActivas, okCalificadas, okCompra,
+      califica: okProduccion && okActivas && okCalificadas && okCompra
+    };
+  });
+
+  const ganadora = evaluaciones.find(e => e.califica) || null;
+  const referencia = ganadora || evaluaciones[evaluaciones.length - 1];
+
+  return {
+    lines,
+    activas,
+    calificadasP1,
+    calificadasP2,
+    compraP1,
+    compraP2,
+    produccionP1,
+    produccionP2,
+    produccion: produccionP1 + produccionP2,
+    lineaMasFuerte: lines[0] || null,
+    evaluaciones,
+    referencia,
+    consolidaEn: ganadora ? ganadora.consolidaEn : null,
+    rango: ganadora ? ganadora.rango : RANK_BY_KEY.sinRango
+  };
 }
 
-function hasLeaderEverReachedRank(leaderId, rankKey, beforeMonthKey){
-  const order = RANK_ORDER[rankKey];
-  if(!order) return true; // sinRango siempre "alcanzado"
-
+// Rango más alto logrado (calculado o capturado a mano) hasta ese mes inclusive.
+function getHistoricalRank(leaderId, uptoMonthKey){
   const leader = members.find(m => m.id === leaderId);
-  const months = collectAvailableMonths().filter(mk => mk < beforeMonthKey);
-
-  for(const mk of months){
+  if(!leader) return RANK_BY_KEY.sinRango;
+  const months = new Set(collectAvailableMonths());
+  if(leader.manualRank) Object.keys(leader.manualRank).forEach(k => months.add(k));
+  let best = RANK_BY_KEY.sinRango;
+  months.forEach(mk => {
+    if(mk > uptoMonthKey) return;
     const manualKey = getManualRank(leader, mk);
-    if(manualKey && RANK_ORDER[manualKey] >= order) return true;
-    const info = getMonthlyRankInfo(leaderId, mk);
-    if(RANK_ORDER[info.rango.key] >= order) return true;
-  }
-  return false;
+    if(manualKey && RANK_BY_KEY[manualKey] && RANK_ORDER[manualKey] > RANK_ORDER[best.key]){
+      best = RANK_BY_KEY[manualKey];
+    }
+    const calc = getMonthlyRankInfo(leaderId, mk).rango;
+    if(RANK_ORDER[calc.key] > RANK_ORDER[best.key]) best = calc;
+  });
+  return best;
+}
+
+function rankRatesText(rankKey){
+  const rates = [1, 2, 3, 4, 5].map(l => RATE_TABLE[l][rankKey] || 0).filter(r => r > 0);
+  return rates.length ? rates.map(r => r + '%').join(' – ') : 'Ninguno';
+}
+
+function rankLevelsCount(rankKey){
+  return [1, 2, 3, 4, 5].filter(l => (RATE_TABLE[l][rankKey] || 0) > 0).length;
 }
 
 function minCompraPeriodo(rangoKey){
@@ -3565,7 +3778,8 @@ function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo
       : ["Rango logrado en (mes base)", monthKeyLabel(prevMonthKey)],
     ["Activas en " + monthKeyLabel(prevMonthKey) + " (>" + COMISION_ACTIVE_MIN + " pts)", rankInfo.activas],
     ["Producción grupal de " + monthKeyLabel(prevMonthKey), rankInfo.produccion],
-    ["% Equipo calificado en " + monthKeyLabel(prevMonthKey), rankInfo.pctCalificado.toFixed(1) + "%"],
+    ["Calificadas P1 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP1],
+    ["Calificadas P2 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP2],
     [],
     ["Comisión por línea — Periodo 1 (montos netos, después de 16% IVA)"],
     ["Línea", "Personas", "Puntos", "Tasa %", "Comisión neta"],
