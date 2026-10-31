@@ -2898,7 +2898,7 @@ function renderRankAudit(leaderId, monthKey){
     </tr>`).join('');
 
   const lineas = info.lines.map(l => {
-    const excede = l.totalSinLider > ref.tope;
+    const excede = l.total > ref.tope;
     return `
       <tr>
         <td>${escapeHtml(l.nombre)}</td>
@@ -2906,7 +2906,7 @@ function renderRankAudit(leaderId, monthKey){
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(Math.min(l.totalSinLider, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.totalSinLider - ref.tope)}</div>` : ''}<div class="ra-sub">sin la compra propia de ${escapeHtml(l.nombre)} (${fmtPts(l.total - l.totalSinLider)} pts)</div></td>
+        <td>${fmtPts(Math.min(l.total, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
       </tr>`;
   }).join('');
 
@@ -2930,7 +2930,7 @@ function renderRankAudit(leaderId, monthKey){
       ${stat('Compra personal P2', fmtMxn(info.compraP2))}
     </div>
     <div class="commissions-stats">
-      ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.total) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)}</span>` : '—')}
+      ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.totalSinLider) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)} · solo lo que vendió su equipo, sin su compra personal</span>` : '—')}
       ${stat(`Máximo por línea (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
       ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
     </div>
@@ -3667,8 +3667,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
     const tope = r.produccion * RANK_LINE_CAP_PCT;
-    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1SinLider, tope), 0);
-    const validaMes = lines.reduce((s, l) => s + Math.min(l.totalSinLider, tope), 0);
+    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1, tope), 0);
+    const validaMes = lines.reduce((s, l) => s + Math.min(l.total, tope), 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
