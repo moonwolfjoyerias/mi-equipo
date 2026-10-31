@@ -2890,7 +2890,7 @@ function renderRankAudit(leaderId, monthKey){
   const pruebas = info.evaluaciones.map(e => `
     <tr class="${e.rango.key === info.rango.key ? 'ra-row-win' : ''}">
       <td><b>${escapeHtml(e.rango.label)}</b></td>
-      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">tope por línea ${fmtPts(e.tope)}${e.consolidaEn ? ' · consolida en P' + e.consolidaEn : ''}</div></td>
+      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">${e.consolidaEn ? 'consolida en P' + e.consolidaEn : ''}</div></td>
       <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}</td>
       <td>${ok(e.okCalificadas)} ${info.calificadasP1} y ${info.calificadasP2} / ${e.rango.calificadas}</td>
       <td>${e.rango.compraCalifica ? (e.consolidaEn ? ok(e.okCompra) + ' ' + fmtMxn(e.rango.compraLider) + (e.consolidaEn === 1 ? ' en P1 y P2' : ' en P2') : '<span class="ra-sub">' + fmtMxn(e.rango.compraLider) + ' en el periodo que consolide</span>') : '<span class="ra-sub">No condiciona el rango</span>'}</td>
@@ -2898,7 +2898,6 @@ function renderRankAudit(leaderId, monthKey){
     </tr>`).join('');
 
   const lineas = info.lines.map(l => {
-    const excede = l.total > ref.tope;
     return `
       <tr>
         <td>${escapeHtml(l.nombre)}</td>
@@ -2906,7 +2905,7 @@ function renderRankAudit(leaderId, monthKey){
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(Math.min(l.total, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
+        <td>${fmtPts(l.total)}</td>
       </tr>`;
   }).join('');
 
@@ -2931,7 +2930,6 @@ function renderRankAudit(leaderId, monthKey){
     </div>
     <div class="commissions-stats">
       ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.totalSinLider) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)} · solo lo que vendió su equipo, sin su compra personal</span>` : '—')}
-      ${stat(`Máximo por línea (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
       ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
     </div>
     <div class="commissions-stats">
@@ -3667,8 +3665,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
     const tope = r.produccion * RANK_LINE_CAP_PCT;
-    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1, tope), 0);
-    const validaMes = lines.reduce((s, l) => s + Math.min(l.total, tope), 0);
+    const validaP1 = lines.reduce((s, l) => s + l.p1, 0);
+    const validaMes = lines.reduce((s, l) => s + l.total, 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
