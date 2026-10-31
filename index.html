@@ -2898,7 +2898,7 @@ function renderRankAudit(leaderId, monthKey){
     </tr>`).join('');
 
   const lineas = info.lines.map(l => {
-    const excede = l.total > ref.tope;
+    const excede = l.totalSinLider > ref.tope;
     return `
       <tr>
         <td>${escapeHtml(l.nombre)}</td>
@@ -2906,7 +2906,7 @@ function renderRankAudit(leaderId, monthKey){
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(Math.min(l.total, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
+        <td>${fmtPts(Math.min(l.totalSinLider, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.totalSinLider - ref.tope)}</div>` : ''}<div class="ra-sub">sin la compra propia de ${escapeHtml(l.nombre)} (${fmtPts(l.total - l.totalSinLider)} pts)</div></td>
       </tr>`;
   }).join('');
 
@@ -3636,6 +3636,7 @@ function getMonthlyRankInfo(leaderId, monthKey){
 
   const lines = (children[leaderId] || []).map(direct => {
     let p1 = 0, p2 = 0, personas = 0;
+    const directPts = memberPeriodPoints(direct, monthKey);
     const stack = [direct];
     while(stack.length){
       const m = stack.pop();
@@ -3650,7 +3651,11 @@ function getMonthlyRankInfo(leaderId, monthKey){
       if(pts.p2 >= COMISION_QUALIFIED_MIN) calificadasP2++;
       (children[m.id] || []).forEach(c => stack.push(c));
     }
-    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2};
+    // Para el tope del 50% por línea, la compra personal de la patrocinada
+    // que encabeza la línea no cuenta: solo cuenta lo que compra su propio equipo.
+    const p1SinLider = p1 - directPts.p1;
+    const p2SinLider = p2 - directPts.p2;
+    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2, p1SinLider, p2SinLider, totalSinLider: p1SinLider + p2SinLider};
   }).sort((a, b) => b.total - a.total);
 
   const own = memberPeriodPoints(leader, monthKey);
@@ -3662,8 +3667,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
     const tope = r.produccion * RANK_LINE_CAP_PCT;
-    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1, tope), 0);
-    const validaMes = lines.reduce((s, l) => s + Math.min(l.total, tope), 0);
+    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1SinLider, tope), 0);
+    const validaMes = lines.reduce((s, l) => s + Math.min(l.totalSinLider, tope), 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
