@@ -1096,6 +1096,19 @@
     </div>
 
     <div class="card">
+      <h2>Auditoría de rango para el equipo</h2>
+      <div class="hint">Muestra u oculta el botón "Mi auditoría de rango" que ven las líderes al consultar su equipo. Apágalo si quieres revisar o ajustar la regla sin que el equipo vea números a medio calibrar.</div>
+      <div class="locked-hint" id="rankAuditVisibilityLockedHint">Desbloquea la edición arriba para cambiar esto.</div>
+      <fieldset id="rankAuditVisibilityFieldset" disabled>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink);">
+          <input type="checkbox" id="rankAuditVisibleCheckbox" checked>
+          Mostrar "Mi auditoría de rango" a las líderes
+        </label>
+        <div class="status" id="rankAuditVisibilityStatus"></div>
+      </fieldset>
+    </div>
+
+    <div class="card">
       <h2>Historial de comisiones</h2>
       <div class="hint">Ve mes a mes cuánto se le ha ido acumulando en comisiones a cada líder, incluyendo el mes en curso, y el total acumulado.</div>
       <div class="locked-hint" id="commissionHistoryLockedHint">Desbloquea la edición arriba para entrar a esta sección.</div>
@@ -1641,6 +1654,7 @@ function updateLockUI(){
   const leaderReportsFieldset = document.getElementById('leaderReportsFieldset');
   const raffleFieldset = document.getElementById('raffleFieldset');
   const rankHistoryFieldset = document.getElementById('rankHistoryFieldset');
+  const rankAuditVisibilityFieldset = document.getElementById('rankAuditVisibilityFieldset');
   const commissionHistoryFieldset = document.getElementById('commissionHistoryFieldset');
   const formFieldset = document.getElementById('formFieldset');
   const importHint = document.getElementById('importLockedHint');
@@ -1650,6 +1664,7 @@ function updateLockUI(){
   const leaderReportsHint = document.getElementById('leaderReportsLockedHint');
   const raffleHint = document.getElementById('raffleLockedHint');
   const rankHistoryHint = document.getElementById('rankHistoryLockedHint');
+  const rankAuditVisibilityHint = document.getElementById('rankAuditVisibilityLockedHint');
   const commissionHistoryHint = document.getElementById('commissionHistoryLockedHint');
   const formHintLock = document.getElementById('formLockedHint');
 
@@ -1661,6 +1676,7 @@ function updateLockUI(){
   leaderReportsFieldset.disabled = !unlocked;
   raffleFieldset.disabled = !unlocked;
   rankHistoryFieldset.disabled = !unlocked;
+  rankAuditVisibilityFieldset.disabled = !unlocked;
   commissionHistoryFieldset.disabled = !unlocked;
   formFieldset.disabled = !unlocked;
   importHint.style.display = unlocked ? 'none' : 'block';
@@ -1670,6 +1686,7 @@ function updateLockUI(){
   leaderReportsHint.style.display = unlocked ? 'none' : 'block';
   raffleHint.style.display = unlocked ? 'none' : 'block';
   rankHistoryHint.style.display = unlocked ? 'none' : 'block';
+  rankAuditVisibilityHint.style.display = unlocked ? 'none' : 'block';
   commissionHistoryHint.style.display = unlocked ? 'none' : 'block';
   formHintLock.style.display = unlocked ? 'none' : 'block';
   if(unlocked && typeof renderLeaderReportsList === 'function') renderLeaderReportsList();
@@ -3164,6 +3181,19 @@ document.getElementById('backToAdminFromRankHistoryBtn').addEventListener('click
 
 document.getElementById('downloadRankHistoryBtn').addEventListener('click', downloadRankHistoryExcel);
 
+document.getElementById('rankAuditVisibleCheckbox').addEventListener('change', async (e) => {
+  if(!unlocked) return;
+  treeMeta.rankAuditVisible = e.target.checked;
+  const statusEl = document.getElementById('rankAuditVisibilityStatus');
+  statusEl.textContent = 'Guardando...';
+  statusEl.className = 'status';
+  await saveMeta();
+  statusEl.textContent = treeMeta.rankAuditVisible
+    ? 'Listo: las líderes ya pueden ver su auditoría de rango.'
+    : 'Listo: el botón de auditoría de rango está oculto para las líderes.';
+  statusEl.className = 'status';
+});
+
 /* ---- Historial de comisiones ---- */
 
 function buildCommissionHistoryData(monthsCount){
@@ -4089,7 +4119,7 @@ async function storageSet(key, value, shared){
   }
 }
 
-let treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null};
+let treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null, rankAuditVisible: true};
 
 function formatDateTime(iso){
   if(!iso) return 'Sin registros todavía';
@@ -4102,6 +4132,12 @@ function updateMetaDisplays(){
   const pointsEl = document.getElementById('pointsLastUpdated');
   if(treeEl) treeEl.textContent = formatDateTime(treeMeta.lastTreeUpdate);
   if(pointsEl) pointsEl.textContent = formatDateTime(treeMeta.lastPointsUpdate);
+
+  const rankAuditVisible = treeMeta.rankAuditVisible !== false;
+  const myRankAuditBtn = document.getElementById('openMyRankAuditBtn');
+  if(myRankAuditBtn) myRankAuditBtn.style.display = rankAuditVisible ? '' : 'none';
+  const rankAuditVisibleCheckbox = document.getElementById('rankAuditVisibleCheckbox');
+  if(rankAuditVisibleCheckbox) rankAuditVisibleCheckbox.checked = rankAuditVisible;
 }
 
 async function saveMeta(){
@@ -4138,9 +4174,9 @@ async function loadMembers(){
   }
   try{
     const metaResult = await storageGet(META_KEY, true);
-    treeMeta = metaResult ? JSON.parse(metaResult.value) : {lastTreeUpdate: null, lastPointsUpdate: null};
+    treeMeta = metaResult ? JSON.parse(metaResult.value) : {lastTreeUpdate: null, lastPointsUpdate: null, rankAuditVisible: true};
   }catch(e){
-    treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null};
+    treeMeta = {lastTreeUpdate: null, lastPointsUpdate: null, rankAuditVisible: true};
   }
   updateMetaDisplays();
   updateStorageModeBadge();
