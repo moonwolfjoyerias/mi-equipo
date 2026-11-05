@@ -2609,7 +2609,6 @@ function renderLeaderReportsList(){
     const compraP2 = ownPtsCurrent && ownPtsCurrent.p2 != null ? ownPtsCurrent.p2 : 0;
     const currentManualKey = getManualRank(m, monthKey) || '';
     const paid = isCommissionPaid(m, monthKey);
-    const noAplica = periodo1.gated && periodo2.gated;
 
     const rankSourceText = isManual
       ? `Rango base capturado a mano para ${monthKeyLabel(monthKey)} (no hay datos de ${monthKeyLabel(prevMonthKey)})`
@@ -2635,19 +2634,17 @@ function renderLeaderReportsList(){
               ${rankOptions.map(o => `<option value="${o.key}" ${o.key === currentManualKey ? 'selected' : ''}>${o.label}</option>`).join('')}
             </select>
           </label>
-          ${noAplica
-            ? `<span class="lr-not-applicable">No aplica — no cubrió la compra mínima de su rango</span>`
-            : `<div class="lr-paid-block">
-                <label class="lr-paid-checkbox-label">
-                  <input type="checkbox" class="lr-paid-checkbox" data-id="${m.id}" ${paid ? 'checked' : ''}>
-                  Comisión de ${monthKeyLabel(monthKey)} pagada
-                </label>
-                <div class="lr-tracking-field" data-id="${m.id}" style="display:${paid ? 'flex' : 'none'};">
-                  <label>Clave de rastreo (SPEI)
-                    <input type="text" class="lr-tracking-input" data-id="${m.id}" value="${escapeHtml(getCommissionTracking(m, monthKey))}" placeholder="Ej. MBAN01001234567890123456">
-                  </label>
-                </div>
-              </div>`}
+          <div class="lr-paid-block">
+            <label class="lr-paid-checkbox-label">
+              <input type="checkbox" class="lr-paid-checkbox" data-id="${m.id}" ${paid ? 'checked' : ''}>
+              Comisión de ${monthKeyLabel(monthKey)} pagada
+            </label>
+            <div class="lr-tracking-field" data-id="${m.id}" style="display:${paid ? 'flex' : 'none'};">
+              <label>Clave de rastreo (SPEI)
+                <input type="text" class="lr-tracking-input" data-id="${m.id}" value="${escapeHtml(getCommissionTracking(m, monthKey))}" placeholder="Ej. MBAN01001234567890123456">
+              </label>
+            </div>
+          </div>
           <button type="button" class="secondary lr-lines-btn" data-id="${m.id}">
             <svg class="icon icon-tight" viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
             Ver equipo por línea
@@ -2775,13 +2772,10 @@ function computeCommissionsData(leaderId, monthKey){
     rankInfo = {...rankInfo, rango: RANK_BY_KEY[manualKey]};
   }
 
-  const ownPts = getMemberMonthPoints(leader, monthKey);
-  const compraP1 = ownPts && ownPts.p1 != null ? ownPts.p1 : 0;
-  const compraP2 = ownPts && ownPts.p2 != null ? ownPts.p2 : 0;
   const team = buildTeamForCommissions(leaderId, monthKey);
 
-  const periodo1 = comisionesPeriodo(team, 'p1', rankInfo.rango, compraP1);
-  const periodo2 = comisionesPeriodo(team, 'p2', rankInfo.rango, compraP2);
+  const periodo1 = comisionesPeriodo(team, 'p1', rankInfo.rango);
+  const periodo2 = comisionesPeriodo(team, 'p2', rankInfo.rango);
 
   return {leader, prevMonthKey, rankInfo, team, periodo1, periodo2, isManual};
 }
@@ -2793,7 +2787,6 @@ function renderCommissionsView(leaderId, monthKey){
   document.getElementById('commissionsTitle').textContent = `Comisiones de ${leader.fullName} — ${monthKeyLabel(monthKey)}`;
 
   function periodBlock(label, res){
-    const gatedNote = res.gated ? `<div class="commissions-gated-note">Sin comisión este periodo: la compra personal del líder no alcanzó el mínimo requerido para su rango.</div>` : '';
     const rows = res.resumenLineas.map(r => `
       <tr>
         <td>Línea ${r.linea}</td>
@@ -2805,7 +2798,6 @@ function renderCommissionsView(leaderId, monthKey){
     return `
       <div class="commissions-period">
         <h3>${label}</h3>
-        ${gatedNote}
         <table class="commissions-table">
           <thead><tr><th>Línea</th><th>Personas</th><th>Puntos</th><th>Tasa</th><th>Comisión neta</th></tr></thead>
           <tbody>${rows || '<tr><td colspan="5" style="color:var(--muted);">Sin personas en este periodo.</td></tr>'}</tbody>
@@ -2820,46 +2812,41 @@ function renderCommissionsView(leaderId, monthKey){
 
   const totalGeneral = round2(periodo1.totalComision + periodo2.totalComision);
   const paidNow = isCommissionPaid(leader, monthKey);
-  const noAplica = periodo1.gated && periodo2.gated;
 
   document.getElementById('commissionsContent').innerHTML = `
-    ${noAplica
-      ? `<div class="lr-not-applicable" style="margin-bottom:14px; display:inline-block;">No aplica — no cubrió la compra mínima de su rango</div>`
-      : `<div class="lr-paid-block" style="margin-bottom:14px;">
-          <label class="lr-paid-checkbox-label">
-            <input type="checkbox" id="modalPaidCheckbox" ${paidNow ? 'checked' : ''}>
-            Comisión de ${monthKeyLabel(monthKey)} pagada
-          </label>
-          <div class="lr-tracking-field" id="modalTrackingField" style="display:${paidNow ? 'flex' : 'none'};">
-            <label>Clave de rastreo (SPEI)
-              <input type="text" id="modalTrackingInput" value="${escapeHtml(getCommissionTracking(leader, monthKey))}" placeholder="Ej. MBAN01001234567890123456">
-            </label>
-          </div>
-        </div>`}
+    <div class="lr-paid-block" style="margin-bottom:14px;">
+      <label class="lr-paid-checkbox-label">
+        <input type="checkbox" id="modalPaidCheckbox" ${paidNow ? 'checked' : ''}>
+        Comisión de ${monthKeyLabel(monthKey)} pagada
+      </label>
+      <div class="lr-tracking-field" id="modalTrackingField" style="display:${paidNow ? 'flex' : 'none'};">
+        <label>Clave de rastreo (SPEI)
+          <input type="text" id="modalTrackingInput" value="${escapeHtml(getCommissionTracking(leader, monthKey))}" placeholder="Ej. MBAN01001234567890123456">
+        </label>
+      </div>
+    </div>
     <div class="commissions-stats">
       <div class="commissions-stat"><div class="cs-label">Rango vigente</div><div class="cs-value">${escapeHtml(rankInfo.rango.label)}</div></div>
       <div class="commissions-stat"><div class="cs-label">${isManual ? 'Rango capturado a mano' : 'Logrado en'}</div><div class="cs-value" style="font-size:14px;">${isManual ? 'Sin mes anterior' : monthKeyLabel(prevMonthKey)}</div></div>
-      <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (>${COMISION_ACTIVE_MIN} pts)</div><div class="cs-value">${rankInfo.activas}</div></div>
-      <div class="commissions-stat"><div class="cs-label">Calificadas P1 / P2 (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts)</div><div class="cs-value">${rankInfo.calificadasP1} / ${rankInfo.calificadasP2}</div></div>
+      <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_ACTIVE_MIN} pts en P1 y P2)</div><div class="cs-value">${rankInfo.activas}</div></div>
+      <div class="commissions-stat"><div class="cs-label">Calificadas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)</div><div class="cs-value">${rankInfo.calificadas}</div></div>
     </div>
     ${periodBlock('Periodo 1', periodo1)}
     ${periodBlock('Periodo 2', periodo2)}
     <div class="commissions-grandtotal">Total neto a pagar: $${totalGeneral.toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
   `;
 
-  if(!noAplica){
-    document.getElementById('modalPaidCheckbox').addEventListener('change', async (e) => {
-      setCommissionPaid(leader, monthKey, e.target.checked);
-      document.getElementById('modalTrackingField').style.display = e.target.checked ? 'flex' : 'none';
-      await saveMembers();
-      renderLeaderReportsList();
-    });
-    document.getElementById('modalTrackingInput').addEventListener('change', async (e) => {
-      setCommissionTracking(leader, monthKey, e.target.value);
-      await saveMembers();
-      renderLeaderReportsList();
-    });
-  }
+  document.getElementById('modalPaidCheckbox').addEventListener('change', async (e) => {
+    setCommissionPaid(leader, monthKey, e.target.checked);
+    document.getElementById('modalTrackingField').style.display = e.target.checked ? 'flex' : 'none';
+    await saveMembers();
+    renderLeaderReportsList();
+  });
+  document.getElementById('modalTrackingInput').addEventListener('change', async (e) => {
+    setCommissionTracking(leader, monthKey, e.target.value);
+    await saveMembers();
+    renderLeaderReportsList();
+  });
 }
 
 function getNextMonthKey(monthKey){
@@ -2877,6 +2864,7 @@ function renderRankAudit(leaderId, monthKey){
 
   const info = getMonthlyRankInfo(leaderId, monthKey);
   const historico = getHistoricalRank(leaderId, monthKey);
+  const ref = info.referencia;
   const nextMonthKey = getNextMonthKey(monthKey);
   const {rankInfo: vigente, isManual, periodo1, periodo2} = computeCommissionsData(leaderId, monthKey);
   const comisionTotal = periodo1.totalComision + periodo2.totalComision;
@@ -2889,22 +2877,25 @@ function renderRankAudit(leaderId, monthKey){
   const pruebas = info.evaluaciones.map(e => `
     <tr class="${e.rango.key === info.rango.key ? 'ra-row-win' : ''}">
       <td><b>${escapeHtml(e.rango.label)}</b></td>
-      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">${e.consolidaEn ? 'consolida en P' + e.consolidaEn : ''}</div></td>
+      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">tope por línea ${fmtPts(e.tope)}${e.consolidaEn ? ' · consolida en P' + e.consolidaEn : ''}</div></td>
       <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}</td>
-      <td>${ok(e.okCalificadas)} ${info.calificadasP1} y ${info.calificadasP2} / ${e.rango.calificadas}</td>
-      <td>${e.rango.compraCalifica ? (e.consolidaEn ? ok(e.okCompra) + ' ' + fmtMxn(e.rango.compraLider) + (e.consolidaEn === 1 ? ' en P1 y P2' : ' en P2') : '<span class="ra-sub">' + fmtMxn(e.rango.compraLider) + ' en el periodo que consolide</span>') : '<span class="ra-sub">No condiciona el rango</span>'}</td>
+      <td>${ok(e.okCalificadas)} ${info.calificadas} / ${e.rango.calificadas}<div class="ra-sub">P1: ${info.calificadasP1} · P2: ${info.calificadasP2}</div></td>
+      <td>${ok(e.okCompra)} ${fmtMxn(e.valorCompra)} / ${fmtMxn(e.rango.compraLider)}<div class="ra-sub">${e.soloUnPeriodo ? 'el mayor de P1 o P2' : 'el menor de P1 y P2 (ambos periodos)'}</div></td>
       <td>${e.rango.key === info.rango.key ? '<b class="ra-ok">Recalifica</b>' : (e.califica ? '<span class="ra-sub">También cumple</span>' : '<span class="ra-no">No</span>')}</td>
     </tr>`).join('');
 
-  const lineas = info.lines.map(l => {
+  const lineas = info.lines.map((l, i) => {
+    const esMasFuerte = i === 0;
+    const cuenta = esMasFuerte ? Math.min(l.total, ref.tope) : l.total;
+    const excede = esMasFuerte && l.total > ref.tope;
     return `
       <tr>
-        <td>${escapeHtml(l.nombre)}</td>
+        <td>${escapeHtml(l.nombre)}${esMasFuerte ? ' <span class="ra-sub">(más fuerte)</span>' : ''}</td>
         <td>${l.personas}</td>
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(l.validoTotal)}<div class="ra-sub">${escapeHtml(l.nombre)} 100% (${fmtPts(l.total - l.totalSinLider)}) + equipo 50% (${fmtPts(l.totalSinLider)} × 50%)</div></td>
+        <td>${fmtPts(cuenta)}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
       </tr>`;
   }).join('');
 
@@ -2919,9 +2910,9 @@ function renderRankAudit(leaderId, monthKey){
       ${stat('Producción mensual', fmtPts(info.produccion) + ' pts')}
     </div>
     <div class="commissions-stats">
-      ${stat(`Activas (>${COMISION_ACTIVE_MIN} pts en el mes)`, info.activas)}
-      ${stat(`Calificadas P1 (≥${COMISION_QUALIFIED_MIN} pts)`, info.calificadasP1)}
-      ${stat(`Calificadas P2 (≥${COMISION_QUALIFIED_MIN} pts)`, info.calificadasP2)}
+      ${stat(`Activas (${monthKeyLabel(monthKey)}) (≥${COMISION_ACTIVE_MIN} pts en P1 y P2)`, info.activas)}
+      ${stat(`Calificadas (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)`, info.calificadas)}
+      ${stat('Calificadas por periodo (informativo)', `P1: ${info.calificadasP1} · P2: ${info.calificadasP2}`)}
     </div>
     <div class="commissions-stats">
       ${stat('Compra personal P1', fmtMxn(info.compraP1))}
@@ -2929,7 +2920,8 @@ function renderRankAudit(leaderId, monthKey){
     </div>
     <div class="commissions-stats">
       ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.totalSinLider) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)} · solo lo que vendió su equipo, sin su compra personal</span>` : '—')}
-      ${stat('Puntos válidos para rango', fmtPts(info.validaMes) + ' pts' + `<span class="ra-sub">100% de cada patrocinada directa + 50% de su equipo</span>`)}
+      ${stat(`Máximo para la línea más fuerte (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
+      ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
     </div>
     <div class="commissions-stats">
       ${stat(`Niveles que puede cobrar (desde ${monthKeyLabel(nextMonthKey)})`, rankLevelsCount(info.rango.key) + `<span class="ra-sub">${rankRatesText(info.rango.key)}</span>`)}
@@ -2940,7 +2932,7 @@ function renderRankAudit(leaderId, monthKey){
     <h3 class="ra-h3">Prueba de rangos (de mayor a menor)</h3>
     <div class="ra-table-wrap">
       <table class="commissions-table">
-        <thead><tr><th>Rango</th><th>Puntos válidos para rango</th><th>Activas</th><th>Calificadas P1 y P2</th><th>Compra personal</th><th>Resultado</th></tr></thead>
+        <thead><tr><th>Rango</th><th>Producción válida</th><th>Activas</th><th>Calificadas</th><th>Compra personal</th><th>Resultado</th></tr></thead>
         <tbody>${pruebas}</tbody>
       </table>
     </div>
@@ -2950,7 +2942,7 @@ function renderRankAudit(leaderId, monthKey){
       ${info.lines.length ? `
       <div class="ra-table-wrap">
         <table class="commissions-table">
-          <thead><tr><th>Patrocinada directa</th><th>Personas</th><th>P1</th><th>P2</th><th>Producción mensual</th><th>Puntos válidos para rango</th></tr></thead>
+          <thead><tr><th>Patrocinada directa</th><th>Personas</th><th>P1</th><th>P2</th><th>Producción mensual</th><th>Cuenta para ${escapeHtml(ref.rango.label)}</th></tr></thead>
           <tbody>${lineas}</tbody>
         </table>
       </div>` : '<div class="hint">No tiene patrocinadas directas.</div>'}
@@ -3033,11 +3025,10 @@ function downloadBulkCommissionsPayment(monthKey){
 
   const rows = leaders.map(m => {
     const {rankInfo, periodo1, periodo2} = computeCommissionsData(m.id, monthKey);
-    const noAplica = periodo1.gated && periodo2.gated;
-    const total = noAplica ? 0 : round2(periodo1.totalComision + periodo2.totalComision);
+    const total = round2(periodo1.totalComision + periodo2.totalComision);
     const paid = isCommissionPaid(m, monthKey);
     const tracking = getCommissionTracking(m, monthKey);
-    const estado = noAplica ? 'No aplica' : (paid ? 'Pagado' : 'Pendiente');
+    const estado = paid ? 'Pagado' : 'Pendiente';
     granTotal += total;
     return [m.fullName, rankInfo.rango.label, total, estado, tracking || ''];
   });
@@ -3178,10 +3169,9 @@ function buildCommissionHistoryData(monthsCount){
     let acumulado = 0;
     const amounts = months.map(mk => {
       const {periodo1, periodo2} = computeCommissionsData(m.id, mk);
-      const noAplica = periodo1.gated && periodo2.gated;
-      const total = noAplica ? 0 : round2(periodo1.totalComision + periodo2.totalComision);
-      if(!noAplica) acumulado += total;
-      return {total, noAplica};
+      const total = round2(periodo1.totalComision + periodo2.totalComision);
+      acumulado += total;
+      return {total};
     });
     return {member: m, amounts, acumulado: round2(acumulado)};
   });
@@ -3215,10 +3205,7 @@ function renderCommissionHistoryTable(){
   const headerHtml = `<tr><th>Líder</th>${months.map(mk => `<th>${monthKeyLabel(mk)}${mk === currentMonth ? ' (en curso)' : ''}</th>`).join('')}<th>Acumulado</th></tr>`;
 
   const bodyHtml = rows.map(r => {
-    const cells = r.amounts.map(a => a.noAplica
-      ? `<td><span class="ch-na">No aplica</span></td>`
-      : `<td>${fmtMoney(a.total)}</td>`
-    ).join('');
+    const cells = r.amounts.map(a => `<td>${fmtMoney(a.total)}</td>`).join('');
     return `<tr><td>${escapeHtml(r.member.fullName)}</td>${cells}<td class="ch-total-col">${fmtMoney(r.acumulado)}</td></tr>`;
   }).join('');
 
@@ -3242,7 +3229,7 @@ function downloadCommissionHistoryExcel(){
     ['Líder', ...months.map(mk => monthKeyLabel(mk)), 'Acumulado'],
     ...rows.map(r => [
       r.member.fullName,
-      ...r.amounts.map(a => a.noAplica ? 'No aplica' : a.total),
+      ...r.amounts.map(a => a.total),
       r.acumulado
     ])
   ];
@@ -3563,14 +3550,14 @@ const RATE_TABLE = {
 };
 
 const RANKS = [
-  { key: "corona", label: "Corona", activas: 30, produccion: 180000, compraLider: 3000, compraCalifica: true, calificadas: 15 },
-  { key: "diamante", label: "Diamante", activas: 15, produccion: 75000, compraLider: 3000, compraCalifica: true, calificadas: 9 },
-  { key: "oro", label: "Oro", activas: 10, produccion: 52500, compraLider: 1500, compraCalifica: false, calificadas: 6 },
-  { key: "plata", label: "Plata", activas: 5, produccion: 22500, compraLider: 1500, compraCalifica: false, calificadas: 3 },
+  { key: "corona", label: "Corona", activas: 30, produccion: 180000, compraLider: 3000, calificadas: 15 },
+  { key: "diamante", label: "Diamante", activas: 15, produccion: 75000, compraLider: 3000, calificadas: 9 },
+  { key: "oro", label: "Oro", activas: 10, produccion: 52500, compraLider: 1500, calificadas: 6 },
+  { key: "plata", label: "Plata", activas: 5, produccion: 22500, compraLider: 1500, calificadas: 3 },
 ];
 
-// Puntos válidos para rango, por línea directa: 100% de la patrocinada que
-// encabeza la línea + este porcentaje de lo que vendió su propio equipo.
+// Máximo que una sola línea puede aportar a la calificación de un rango
+// (50% de lo que ese rango requiere) — regla del portal y Brillo.
 const RANK_LINE_CAP_PCT = 0.5;
 
 const RANK_BY_KEY = {
@@ -3630,7 +3617,10 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const leader = members.find(m => m.id === leaderId);
   const children = buildChildrenMap();
   const seen = new Set([leaderId]);
-  let activas = 0, calificadasP1 = 0, calificadasP2 = 0;
+  // "Activas" y "calificadas" exigen que la persona llegue a su umbral en LOS
+  // DOS periodos del mes (P1 y P2), no solo en la suma — igual que el portal
+  // y Brillo. calificadasP1/calificadasP2 quedan solo como dato informativo.
+  let activas = 0, calificadas = 0, calificadasP1 = 0, calificadasP2 = 0;
 
   const lines = (children[leaderId] || []).map(direct => {
     let p1 = 0, p2 = 0, personas = 0;
@@ -3644,18 +3634,16 @@ function getMonthlyRankInfo(leaderId, monthKey){
       const pts = memberPeriodPoints(m, monthKey);
       p1 += pts.p1;
       p2 += pts.p2;
-      if(pts.p1 + pts.p2 > COMISION_ACTIVE_MIN) activas++;
+      if(pts.p1 >= COMISION_ACTIVE_MIN && pts.p2 >= COMISION_ACTIVE_MIN) activas++;
       if(pts.p1 >= COMISION_QUALIFIED_MIN) calificadasP1++;
       if(pts.p2 >= COMISION_QUALIFIED_MIN) calificadasP2++;
+      if(pts.p1 >= COMISION_QUALIFIED_MIN && pts.p2 >= COMISION_QUALIFIED_MIN) calificadas++;
       (children[m.id] || []).forEach(c => stack.push(c));
     }
-    // Puntos válidos para rango, por línea: 100% de la patrocinada que
-    // encabeza la línea + 50% de lo que vendió su propio equipo (sin ella).
-    const p1SinLider = p1 - directPts.p1;
-    const p2SinLider = p2 - directPts.p2;
-    const validoP1 = directPts.p1 + p1SinLider * RANK_LINE_CAP_PCT;
-    const validoP2 = directPts.p2 + p2SinLider * RANK_LINE_CAP_PCT;
-    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2, p1SinLider, p2SinLider, totalSinLider: p1SinLider + p2SinLider, validoP1, validoP2, validoTotal: validoP1 + validoP2};
+    // Solo para el dato informativo "Línea más fuerte": lo que vendió el
+    // equipo de la patrocinada, sin su propia compra personal.
+    const totalSinLider = (p1 + p2) - (directPts.p1 + directPts.p2);
+    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2, totalSinLider};
   }).sort((a, b) => b.total - a.total);
 
   const own = memberPeriodPoints(leader, monthKey);
@@ -3664,28 +3652,30 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const produccionP1 = lines.reduce((s, l) => s + l.p1, 0);
   const produccionP2 = lines.reduce((s, l) => s + l.p2, 0);
 
-  // "Puntos válidos para rango": mismo número para los cuatro rangos, no
-  // depende de lo que pida cada uno (ya no hay un tope distinto por rango).
-  const validaP1 = lines.reduce((s, l) => s + l.validoP1, 0);
-  const validaMes = lines.reduce((s, l) => s + l.validoTotal, 0);
-
+  // Regla del 50%: solo la línea MÁS FUERTE (la patrocinada directa con
+  // mayor producción, incluida su propia compra) se topa a un máximo del
+  // 50% de lo que pide ESE rango — el tope cambia según el rango que se
+  // esté probando. Las demás líneas cuentan completas, sin tope. El
+  // excedente de la línea más fuerte no se pierde: sigue siendo producción
+  // real para comisiones (producciónP1/P2 arriba), solo no cuenta aquí.
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
+    const tope = r.produccion * RANK_LINE_CAP_PCT;
+    const validaP1 = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.p1, tope) : l.p1), 0);
+    const validaMes = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.total, tope) : l.total), 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
     const okActivas = activas >= r.activas;
-    const okCalificadas = calificadasP1 >= r.calificadas && calificadasP2 >= r.calificadas;
-    // Plata y Oro: la compra personal no impide calificar (solo condiciona el cobro de cada periodo).
-    // Diamante y Corona: $3,000 en el periodo en que consolida (si consolida en P1, también en P2).
-    let okCompra = true;
-    if(r.compraCalifica){
-      okCompra = consolidaEn === 1
-        ? (compraP1 >= r.compraLider && compraP2 >= r.compraLider)
-        : compraP2 >= r.compraLider;
-    }
+    const okCalificadas = calificadas >= r.calificadas;
+    // Compra personal de la líder, para TODOS los rangos (igual que el
+    // portal/Brillo): Plata y Oro piden el mínimo en AMBOS periodos;
+    // Diamante y Corona piden el mínimo en al menos uno de los dos.
+    const soloUnPeriodo = r.key === 'diamante' || r.key === 'corona';
+    const valorCompra = soloUnPeriodo ? Math.max(compraP1, compraP2) : Math.min(compraP1, compraP2);
+    const okCompra = valorCompra >= r.compraLider;
     return {
-      rango: r, validaP1, validaMes, consolidaEn,
+      rango: r, tope, validaP1, validaMes, consolidaEn, soloUnPeriodo, valorCompra,
       okProduccion, okActivas, okCalificadas, okCompra,
       califica: okProduccion && okActivas && okCalificadas && okCompra
     };
@@ -3697,6 +3687,7 @@ function getMonthlyRankInfo(leaderId, monthKey){
   return {
     lines,
     activas,
+    calificadas,
     calificadasP1,
     calificadasP2,
     compraP1,
@@ -3704,8 +3695,6 @@ function getMonthlyRankInfo(leaderId, monthKey){
     produccionP1,
     produccionP2,
     produccion: produccionP1 + produccionP2,
-    validaP1,
-    validaMes,
     lineaMasFuerte: lines[0] || null,
     evaluaciones,
     referencia,
@@ -3742,14 +3731,9 @@ function rankLevelsCount(rankKey){
   return [1, 2, 3, 4, 5].filter(l => (RATE_TABLE[l][rankKey] || 0) > 0).length;
 }
 
-function minCompraPeriodo(rangoKey){
-  return (rangoKey === "diamante" || rangoKey === "corona") ? 3000 : COMISION_QUALIFIED_MIN;
-}
-
-function comisionesPeriodo(team, puntosField, rango, compraLiderPeriodo){
-  const gated = compraLiderPeriodo < minCompraPeriodo(rango.key);
+function comisionesPeriodo(team, puntosField, rango){
   const detalle = team.map(t => {
-    const rate = gated ? 0 : (t.linea && t.linea <= 5 ? (RATE_TABLE[t.linea][rango.key] || 0) : 0);
+    const rate = t.linea && t.linea <= 5 ? (RATE_TABLE[t.linea][rango.key] || 0) : 0;
     const comisionBruta = (t[puntosField] * rate) / 100;
     const comision = comisionBruta / (1 + COMISION_IVA_RATE);
     const iva = comisionBruta - comision;
@@ -3770,7 +3754,7 @@ function comisionesPeriodo(team, puntosField, rango, compraLiderPeriodo){
   });
   const resumenLineas = ["1", "2", "3", "4", "5", "6+"].filter(k => porLinea[k]).map(k => porLinea[k]);
 
-  return {detalle, totalBruta, totalIva, totalComision, resumenLineas, gated};
+  return {detalle, totalBruta, totalIva, totalComision, resumenLineas};
 }
 
 function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo, periodo1, periodo2, isManual){
@@ -3785,10 +3769,9 @@ function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo
     isManual
       ? ["Rango base", "Capturado a mano (sin datos de " + monthKeyLabel(prevMonthKey) + ")"]
       : ["Rango logrado en (mes base)", monthKeyLabel(prevMonthKey)],
-    ["Activas en " + monthKeyLabel(prevMonthKey) + " (>" + COMISION_ACTIVE_MIN + " pts)", rankInfo.activas],
+    ["Activas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_ACTIVE_MIN + " pts en P1 y P2)", rankInfo.activas],
     ["Producción grupal de " + monthKeyLabel(prevMonthKey), rankInfo.produccion],
-    ["Calificadas P1 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP1],
-    ["Calificadas P2 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP2],
+    ["Calificadas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts en P1 y P2)", rankInfo.calificadas],
     [],
     ["Comisión por línea — Periodo 1 (montos netos, después de 16% IVA)"],
     ["Línea", "Personas", "Puntos", "Tasa %", "Comisión neta"],
