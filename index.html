@@ -2884,16 +2884,18 @@ function renderRankAudit(leaderId, monthKey){
       <td>${e.rango.key === info.rango.key ? '<b class="ra-ok">Recalifica</b>' : (e.califica ? '<span class="ra-sub">También cumple</span>' : '<span class="ra-no">No</span>')}</td>
     </tr>`).join('');
 
-  const lineas = info.lines.map(l => {
-    const excede = l.total > ref.tope;
+  const lineas = info.lines.map((l, i) => {
+    const esMasFuerte = i === 0;
+    const cuenta = esMasFuerte ? Math.min(l.total, ref.tope) : l.total;
+    const excede = esMasFuerte && l.total > ref.tope;
     return `
       <tr>
-        <td>${escapeHtml(l.nombre)}</td>
+        <td>${escapeHtml(l.nombre)}${esMasFuerte ? ' <span class="ra-sub">(más fuerte)</span>' : ''}</td>
         <td>${l.personas}</td>
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(Math.min(l.total, ref.tope))}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
+        <td>${fmtPts(cuenta)}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
       </tr>`;
   }).join('');
 
@@ -2918,7 +2920,7 @@ function renderRankAudit(leaderId, monthKey){
     </div>
     <div class="commissions-stats">
       ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.totalSinLider) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)} · solo lo que vendió su equipo, sin su compra personal</span>` : '—')}
-      ${stat(`Máximo por línea (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
+      ${stat(`Máximo para la línea más fuerte (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
       ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
     </div>
     <div class="commissions-stats">
@@ -3650,16 +3652,17 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const produccionP1 = lines.reduce((s, l) => s + l.p1, 0);
   const produccionP2 = lines.reduce((s, l) => s + l.p2, 0);
 
-  // Regla del 50% por línea: cada línea directa (la patrocinada + todo su
-  // equipo, incluida su propia compra) aporta como máximo el 50% de lo que
-  // pide ESE rango — el tope cambia según el rango que se esté probando.
-  // El excedente de una línea no se pierde: sigue siendo producción real
-  // para comisiones (producciónP1/P2 arriba), solo no cuenta aquí.
+  // Regla del 50%: solo la línea MÁS FUERTE (la patrocinada directa con
+  // mayor producción, incluida su propia compra) se topa a un máximo del
+  // 50% de lo que pide ESE rango — el tope cambia según el rango que se
+  // esté probando. Las demás líneas cuentan completas, sin tope. El
+  // excedente de la línea más fuerte no se pierde: sigue siendo producción
+  // real para comisiones (producciónP1/P2 arriba), solo no cuenta aquí.
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
     const tope = r.produccion * RANK_LINE_CAP_PCT;
-    const validaP1 = lines.reduce((s, l) => s + Math.min(l.p1, tope), 0);
-    const validaMes = lines.reduce((s, l) => s + Math.min(l.total, tope), 0);
+    const validaP1 = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.p1, tope) : l.p1), 0);
+    const validaMes = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.total, tope) : l.total), 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
