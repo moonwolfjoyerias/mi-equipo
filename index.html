@@ -2864,7 +2864,6 @@ function renderRankAudit(leaderId, monthKey){
 
   const info = getMonthlyRankInfo(leaderId, monthKey);
   const historico = getHistoricalRank(leaderId, monthKey);
-  const ref = info.referencia;
   const nextMonthKey = getNextMonthKey(monthKey);
   const {rankInfo: vigente, isManual, periodo1, periodo2} = computeCommissionsData(leaderId, monthKey);
   const comisionTotal = periodo1.totalComision + periodo2.totalComision;
@@ -2877,7 +2876,7 @@ function renderRankAudit(leaderId, monthKey){
   const pruebas = info.evaluaciones.map(e => `
     <tr class="${e.rango.key === info.rango.key ? 'ra-row-win' : ''}">
       <td><b>${escapeHtml(e.rango.label)}</b></td>
-      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">tope por línea ${fmtPts(e.tope)}${e.consolidaEn ? ' · consolida en P' + e.consolidaEn : ''}</div></td>
+      <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">${e.consolidaEn ? 'consolida en P' + e.consolidaEn : ''}</div></td>
       <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}</td>
       <td>${ok(e.okCalificadas)} ${info.calificadas} / ${e.rango.calificadas}<div class="ra-sub">P1: ${info.calificadasP1} · P2: ${info.calificadasP2}</div></td>
       <td>${ok(e.okCompra)} ${fmtMxn(e.valorCompra)} / ${fmtMxn(e.rango.compraLider)}<div class="ra-sub">${e.soloUnPeriodo ? 'el mayor de P1 o P2' : 'el menor de P1 y P2 (ambos periodos)'}</div></td>
@@ -2886,8 +2885,8 @@ function renderRankAudit(leaderId, monthKey){
 
   const lineas = info.lines.map((l, i) => {
     const esMasFuerte = i === 0;
-    const cuenta = esMasFuerte ? Math.min(l.total, ref.tope) : l.total;
-    const excede = esMasFuerte && l.total > ref.tope;
+    const personal = l.total - l.totalSinLider;
+    const cuenta = esMasFuerte ? (personal + l.totalSinLider * RANK_LINE_CAP_PCT) : l.total;
     return `
       <tr>
         <td>${escapeHtml(l.nombre)}${esMasFuerte ? ' <span class="ra-sub">(más fuerte)</span>' : ''}</td>
@@ -2895,7 +2894,7 @@ function renderRankAudit(leaderId, monthKey){
         <td>${fmtPts(l.p1)}</td>
         <td>${fmtPts(l.p2)}</td>
         <td><b>${fmtPts(l.total)}</b></td>
-        <td>${fmtPts(cuenta)}${excede ? `<div class="ra-sub ra-no">excede ${fmtPts(l.total - ref.tope)}</div>` : ''}</td>
+        <td>${fmtPts(cuenta)}${esMasFuerte ? `<div class="ra-sub">100% compra propia (${fmtPts(personal)}) + 50% equipo (${fmtPts(l.totalSinLider)})</div>` : ''}</td>
       </tr>`;
   }).join('');
 
@@ -2920,8 +2919,7 @@ function renderRankAudit(leaderId, monthKey){
     </div>
     <div class="commissions-stats">
       ${stat('Línea más fuerte', info.lineaMasFuerte ? fmtPts(info.lineaMasFuerte.totalSinLider) + ' pts' + `<span class="ra-sub">${escapeHtml(info.lineaMasFuerte.nombre)} · solo lo que vendió su equipo, sin su compra personal</span>` : '—')}
-      ${stat(`Máximo para la línea más fuerte (regla 50%, ${escapeHtml(ref.rango.label)})`, fmtPts(ref.tope) + ' pts')}
-      ${stat(`Producción válida para ${escapeHtml(ref.rango.label)}`, fmtPts(ref.validaMes) + ' pts')}
+      ${stat('Puntos válidos para rango', fmtPts(info.validaMes) + ' pts' + `<span class="ra-sub">100% de la línea más fuerte + su equipo al 50% · las demás líneas, completas</span>`)}
     </div>
     <div class="commissions-stats">
       ${stat(`Niveles que puede cobrar (desde ${monthKeyLabel(nextMonthKey)})`, rankLevelsCount(info.rango.key) + `<span class="ra-sub">${rankRatesText(info.rango.key)}</span>`)}
@@ -2942,7 +2940,7 @@ function renderRankAudit(leaderId, monthKey){
       ${info.lines.length ? `
       <div class="ra-table-wrap">
         <table class="commissions-table">
-          <thead><tr><th>Patrocinada directa</th><th>Personas</th><th>P1</th><th>P2</th><th>Producción mensual</th><th>Cuenta para ${escapeHtml(ref.rango.label)}</th></tr></thead>
+          <thead><tr><th>Patrocinada directa</th><th>Personas</th><th>P1</th><th>P2</th><th>Producción mensual</th><th>Puntos válidos para rango</th></tr></thead>
           <tbody>${lineas}</tbody>
         </table>
       </div>` : '<div class="hint">No tiene patrocinadas directas.</div>'}
@@ -3556,8 +3554,8 @@ const RANKS = [
   { key: "plata", label: "Plata", activas: 5, produccion: 22500, compraLider: 1500, calificadas: 3 },
 ];
 
-// Máximo que una sola línea puede aportar a la calificación de un rango
-// (50% de lo que ese rango requiere) — regla del portal y Brillo.
+// Para la línea más fuerte: su compra personal cuenta 100%, y lo que
+// vendió su propio equipo cuenta a este porcentaje.
 const RANK_LINE_CAP_PCT = 0.5;
 
 const RANK_BY_KEY = {
@@ -3640,10 +3638,12 @@ function getMonthlyRankInfo(leaderId, monthKey){
       if(pts.p1 >= COMISION_QUALIFIED_MIN && pts.p2 >= COMISION_QUALIFIED_MIN) calificadas++;
       (children[m.id] || []).forEach(c => stack.push(c));
     }
-    // Solo para el dato informativo "Línea más fuerte": lo que vendió el
-    // equipo de la patrocinada, sin su propia compra personal.
-    const totalSinLider = (p1 + p2) - (directPts.p1 + directPts.p2);
-    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2, totalSinLider};
+    // Para la línea más fuerte: 100% de la compra personal de la patrocinada
+    // que la encabeza + 50% de lo que vendió su propio equipo (sin ella).
+    const p1SinLider = p1 - directPts.p1;
+    const p2SinLider = p2 - directPts.p2;
+    const totalSinLider = p1SinLider + p2SinLider;
+    return {id: direct.id, nombre: direct.fullName, personas, p1, p2, total: p1 + p2, p1SinLider, p2SinLider, totalSinLider};
   }).sort((a, b) => b.total - a.total);
 
   const own = memberPeriodPoints(leader, monthKey);
@@ -3653,16 +3653,23 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const produccionP2 = lines.reduce((s, l) => s + l.p2, 0);
 
   // Regla del 50%: solo la línea MÁS FUERTE (la patrocinada directa con
-  // mayor producción, incluida su propia compra) se topa a un máximo del
-  // 50% de lo que pide ESE rango — el tope cambia según el rango que se
-  // esté probando. Las demás líneas cuentan completas, sin tope. El
-  // excedente de la línea más fuerte no se pierde: sigue siendo producción
-  // real para comisiones (producciónP1/P2 arriba), solo no cuenta aquí.
+  // mayor producción) se ve afectada — de ella cuenta el 100% de su propia
+  // compra personal + el 50% de lo que vendió su equipo. Las demás líneas
+  // cuentan completas, al 100%. No depende de qué rango se esté probando:
+  // es el mismo número para los cuatro.
+  const validaP1 = lines.reduce((s, l, i) => {
+    if(i !== 0) return s + l.p1;
+    const personalP1 = l.p1 - l.p1SinLider;
+    return s + personalP1 + l.p1SinLider * RANK_LINE_CAP_PCT;
+  }, 0);
+  const validaMes = lines.reduce((s, l, i) => {
+    if(i !== 0) return s + l.total;
+    const personalTotal = l.total - l.totalSinLider;
+    return s + personalTotal + l.totalSinLider * RANK_LINE_CAP_PCT;
+  }, 0);
+
   // Se prueba de Corona hacia abajo; gana el primer rango que cumple todo.
   const evaluaciones = RANKS.map(r => {
-    const tope = r.produccion * RANK_LINE_CAP_PCT;
-    const validaP1 = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.p1, tope) : l.p1), 0);
-    const validaMes = lines.reduce((s, l, i) => s + (i === 0 ? Math.min(l.total, tope) : l.total), 0);
     // Consolida en P1 si P1 solo ya alcanza; si no, sumando P1 + P2 consolida en P2.
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
@@ -3675,7 +3682,7 @@ function getMonthlyRankInfo(leaderId, monthKey){
     const valorCompra = soloUnPeriodo ? Math.max(compraP1, compraP2) : Math.min(compraP1, compraP2);
     const okCompra = valorCompra >= r.compraLider;
     return {
-      rango: r, tope, validaP1, validaMes, consolidaEn, soloUnPeriodo, valorCompra,
+      rango: r, validaP1, validaMes, consolidaEn, soloUnPeriodo, valorCompra,
       okProduccion, okActivas, okCalificadas, okCompra,
       califica: okProduccion && okActivas && okCalificadas && okCompra
     };
@@ -3695,6 +3702,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
     produccionP1,
     produccionP2,
     produccion: produccionP1 + produccionP2,
+    validaP1,
+    validaMes,
     lineaMasFuerte: lines[0] || null,
     evaluaciones,
     referencia,
