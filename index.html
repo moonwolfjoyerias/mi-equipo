@@ -2628,6 +2628,10 @@ function renderLeaderReportsList(){
             ${rankSourceText} · Compra personal de ${monthKeyLabel(monthKey)} para comisión: <b>P1: ${compraP1}</b> · <b>P2: ${compraP2}</b>
           </div>
         </div>
+        ${[periodo1.gated ? 'Periodo 1' : null, periodo2.gated ? 'Periodo 2' : null].filter(Boolean).length ? `
+        <div class="lr-row-bottom">
+          <div class="commissions-gated-note">No se le calculará comisión de ${[periodo1.gated ? 'Periodo 1' : null, periodo2.gated ? 'Periodo 2' : null].filter(Boolean).join(' y ')}: no cubrió la compra mínima de $${minCompraPeriodo(rankInfo.rango.key).toLocaleString('es-MX', {minimumFractionDigits:2})} para su rango (${escapeHtml(rankInfo.rango.label)}) en ese periodo.</div>
+        </div>` : ''}
         <div class="lr-row-bottom">
           <label class="lr-rank-select-label">Rango base manual (usar cuando no haya mes anterior)
             <select class="lr-manual-rank-select" data-id="${m.id}">
@@ -2772,10 +2776,13 @@ function computeCommissionsData(leaderId, monthKey){
     rankInfo = {...rankInfo, rango: RANK_BY_KEY[manualKey]};
   }
 
+  const ownPts = getMemberMonthPoints(leader, monthKey);
+  const compraP1 = ownPts && ownPts.p1 != null ? ownPts.p1 : 0;
+  const compraP2 = ownPts && ownPts.p2 != null ? ownPts.p2 : 0;
   const team = buildTeamForCommissions(leaderId, monthKey);
 
-  const periodo1 = comisionesPeriodo(team, 'p1', rankInfo.rango);
-  const periodo2 = comisionesPeriodo(team, 'p2', rankInfo.rango);
+  const periodo1 = comisionesPeriodo(team, 'p1', rankInfo.rango, compraP1);
+  const periodo2 = comisionesPeriodo(team, 'p2', rankInfo.rango, compraP2);
 
   return {leader, prevMonthKey, rankInfo, team, periodo1, periodo2, isManual};
 }
@@ -2787,6 +2794,9 @@ function renderCommissionsView(leaderId, monthKey){
   document.getElementById('commissionsTitle').textContent = `Comisiones de ${leader.fullName} — ${monthKeyLabel(monthKey)}`;
 
   function periodBlock(label, res){
+    const gatedNote = res.gated
+      ? `<div class="commissions-gated-note">No se le calculará comisión en ${label}: su compra personal fue $${round2(res.compraLiderPeriodo).toLocaleString('es-MX', {minimumFractionDigits:2})}, no alcanzó el mínimo de $${round2(res.minRequerido).toLocaleString('es-MX', {minimumFractionDigits:2})} que pide su rango (${escapeHtml(rankInfo.rango.label)}) en este periodo.</div>`
+      : '';
     const rows = res.resumenLineas.map(r => `
       <tr>
         <td>Línea ${r.linea}</td>
@@ -2798,6 +2808,7 @@ function renderCommissionsView(leaderId, monthKey){
     return `
       <div class="commissions-period">
         <h3>${label}</h3>
+        ${gatedNote}
         <table class="commissions-table">
           <thead><tr><th>Línea</th><th>Personas</th><th>Puntos</th><th>Tasa</th><th>Comisión neta</th></tr></thead>
           <tbody>${rows || '<tr><td colspan="5" style="color:var(--muted);">Sin personas en este periodo.</td></tr>'}</tbody>
@@ -3740,9 +3751,18 @@ function rankLevelsCount(rankKey){
   return [1, 2, 3, 4, 5].filter(l => (RATE_TABLE[l][rankKey] || 0) > 0).length;
 }
 
-function comisionesPeriodo(team, puntosField, rango){
+// Compra personal mínima de la líder, en ESE periodo, para que se le
+// calcule comisión ese periodo: Plata/Oro/Sin rango piden $1,500,
+// Diamante/Corona piden $3,000.
+function minCompraPeriodo(rangoKey){
+  return (rangoKey === "diamante" || rangoKey === "corona") ? 3000 : COMISION_QUALIFIED_MIN;
+}
+
+function comisionesPeriodo(team, puntosField, rango, compraLiderPeriodo){
+  const minRequerido = minCompraPeriodo(rango.key);
+  const gated = compraLiderPeriodo < minRequerido;
   const detalle = team.map(t => {
-    const rate = t.linea && t.linea <= 5 ? (RATE_TABLE[t.linea][rango.key] || 0) : 0;
+    const rate = gated ? 0 : (t.linea && t.linea <= 5 ? (RATE_TABLE[t.linea][rango.key] || 0) : 0);
     const comisionBruta = (t[puntosField] * rate) / 100;
     const comision = comisionBruta / (1 + COMISION_IVA_RATE);
     const iva = comisionBruta - comision;
@@ -3763,7 +3783,7 @@ function comisionesPeriodo(team, puntosField, rango){
   });
   const resumenLineas = ["1", "2", "3", "4", "5", "6+"].filter(k => porLinea[k]).map(k => porLinea[k]);
 
-  return {detalle, totalBruta, totalIva, totalComision, resumenLineas};
+  return {detalle, totalBruta, totalIva, totalComision, resumenLineas, gated, minRequerido, compraLiderPeriodo};
 }
 
 function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo, periodo1, periodo2, isManual){
