@@ -2840,7 +2840,7 @@ function renderCommissionsView(leaderId, monthKey){
       <div class="commissions-stat"><div class="cs-label">Rango vigente</div><div class="cs-value">${escapeHtml(rankInfo.rango.label)}</div></div>
       <div class="commissions-stat"><div class="cs-label">${isManual ? 'Rango capturado a mano' : 'Logrado en'}</div><div class="cs-value" style="font-size:14px;">${isManual ? 'Sin mes anterior' : monthKeyLabel(prevMonthKey)}</div></div>
       <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_ACTIVE_MIN} pts en el mes)</div><div class="cs-value">${rankInfo.activas}</div></div>
-      <div class="commissions-stat"><div class="cs-label">Calificadas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)</div><div class="cs-value">${rankInfo.calificadas}</div></div>
+      <div class="commissions-stat"><div class="cs-label">Calificadas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts, cada periodo por su lado)</div><div class="cs-value">P1: ${rankInfo.calificadasP1} · P2: ${rankInfo.calificadasP2}</div></div>
     </div>
     ${periodBlock('Periodo 1', periodo1)}
     ${periodBlock('Periodo 2', periodo2)}
@@ -2889,7 +2889,7 @@ function renderRankAudit(leaderId, monthKey){
       <td><b>${escapeHtml(e.rango.label)}</b></td>
       <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">${e.consolidaEn ? 'consolida en P' + e.consolidaEn : ''}</div></td>
       <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}<div class="ra-sub">P1: ${info.activasP1} · P2: ${info.activasP2}</div></td>
-      <td>${ok(e.okCalificadas)} ${info.calificadas} / ${e.rango.calificadas}<div class="ra-sub">P1: ${info.calificadasP1} · P2: ${info.calificadasP2}</div></td>
+      <td>${ok(e.okCalificadas)} ${info.calificadasP1} y ${info.calificadasP2} / ${e.rango.calificadas}<div class="ra-sub">se piden ambos periodos, cada uno por su lado</div></td>
       <td>${ok(e.okCompra)} ${fmtMxn(e.valorCompra)} / ${fmtMxn(e.rango.compraLider)}<div class="ra-sub">${e.soloUnPeriodo ? 'el mayor de P1 o P2' : 'el menor de P1 y P2 (ambos periodos)'}</div></td>
       <td>${e.rango.key === info.rango.key ? '<b class="ra-ok">Recalifica</b>' : (e.califica ? '<span class="ra-sub">También cumple</span>' : '<span class="ra-no">No</span>')}</td>
     </tr>`).join('');
@@ -2924,8 +2924,7 @@ function renderRankAudit(leaderId, monthKey){
       ${stat('Activas por periodo (informativo)', `P1: ${info.activasP1} · P2: ${info.activasP2}`)}
     </div>
     <div class="commissions-stats">
-      ${stat(`Calificadas (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)`, info.calificadas)}
-      ${stat('Calificadas por periodo (informativo)', `P1: ${info.calificadasP1} · P2: ${info.calificadasP2}`)}
+      ${stat(`Calificadas (≥${COMISION_QUALIFIED_MIN} pts, cada periodo por su lado)`, `P1: ${info.calificadasP1} · P2: ${info.calificadasP2}`)}
     </div>
     <div class="commissions-stats">
       ${stat('Compra personal P1', fmtMxn(info.compraP1))}
@@ -3630,12 +3629,13 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const children = buildChildrenMap();
   const seen = new Set([leaderId]);
   // "Activas" cuenta a quien, sumando P1 + P2 del mes, llega a $500 — sin
-  // importar cómo se repartió entre los dos periodos (regla propia de
-  // mi-equipo, distinta a la del portal/Brillo). "Calificadas" sí exige el
-  // umbral en LOS DOS periodos por separado, igual que el portal/Brillo.
-  // activasP1/activasP2/calificadasP1/calificadasP2 quedan solo como dato
-  // informativo (útil para ver el avance de un mes que aún no cierra).
-  let activas = 0, activasP1 = 0, activasP2 = 0, calificadas = 0, calificadasP1 = 0, calificadasP2 = 0;
+  // importar cómo se repartió entre los dos periodos. "Calificadas" pide el
+  // umbral de $1,500 en P1 Y en P2, pero cada periodo se revisa por su
+  // lado: no hace falta que sea la MISMA persona la que califique en
+  // ambos, basta con que cada periodo, por separado, junte suficientes
+  // personas calificadas. Ambas son reglas propias de mi-equipo, distintas
+  // a como lo hace el portal/Brillo.
+  let activas = 0, activasP1 = 0, activasP2 = 0, calificadasP1 = 0, calificadasP2 = 0;
 
   const lines = (children[leaderId] || []).map(direct => {
     let p1 = 0, p2 = 0, personas = 0;
@@ -3654,7 +3654,6 @@ function getMonthlyRankInfo(leaderId, monthKey){
       if(pts.p2 >= COMISION_ACTIVE_MIN) activasP2++;
       if(pts.p1 >= COMISION_QUALIFIED_MIN) calificadasP1++;
       if(pts.p2 >= COMISION_QUALIFIED_MIN) calificadasP2++;
-      if(pts.p1 >= COMISION_QUALIFIED_MIN && pts.p2 >= COMISION_QUALIFIED_MIN) calificadas++;
       (children[m.id] || []).forEach(c => stack.push(c));
     }
     // Para la línea más fuerte: 100% de la compra personal de la patrocinada
@@ -3693,7 +3692,7 @@ function getMonthlyRankInfo(leaderId, monthKey){
     const consolidaEn = validaP1 >= r.produccion ? 1 : (validaMes >= r.produccion ? 2 : null);
     const okProduccion = consolidaEn !== null;
     const okActivas = activas >= r.activas;
-    const okCalificadas = calificadas >= r.calificadas;
+    const okCalificadas = calificadasP1 >= r.calificadas && calificadasP2 >= r.calificadas;
     // Compra personal de la líder, para TODOS los rangos (igual que el
     // portal/Brillo): Plata y Oro piden el mínimo en AMBOS periodos;
     // Diamante y Corona piden el mínimo en al menos uno de los dos.
@@ -3715,7 +3714,6 @@ function getMonthlyRankInfo(leaderId, monthKey){
     activas,
     activasP1,
     activasP2,
-    calificadas,
     calificadasP1,
     calificadasP2,
     compraP1,
@@ -3810,7 +3808,8 @@ function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo
       : ["Rango logrado en (mes base)", monthKeyLabel(prevMonthKey)],
     ["Activas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_ACTIVE_MIN + " pts en el mes)", rankInfo.activas],
     ["Producción grupal de " + monthKeyLabel(prevMonthKey), rankInfo.produccion],
-    ["Calificadas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts en P1 y P2)", rankInfo.calificadas],
+    ["Calificadas P1 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP1],
+    ["Calificadas P2 en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts)", rankInfo.calificadasP2],
     [],
     ["Comisión por línea — Periodo 1 (montos netos, después de 16% IVA)"],
     ["Línea", "Personas", "Puntos", "Tasa %", "Comisión neta"],
