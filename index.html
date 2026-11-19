@@ -2888,7 +2888,7 @@ function renderRankAudit(leaderId, monthKey){
     <tr class="${e.rango.key === info.rango.key ? 'ra-row-win' : ''}">
       <td><b>${escapeHtml(e.rango.label)}</b></td>
       <td>${ok(e.okProduccion)} ${fmtPts(e.validaMes)} / ${fmtPts(e.rango.produccion)}<div class="ra-sub">${e.consolidaEn ? 'consolida en P' + e.consolidaEn : ''}</div></td>
-      <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}</td>
+      <td>${ok(e.okActivas)} ${info.activas} / ${e.rango.activas}<div class="ra-sub">P1: ${info.activasP1} · P2: ${info.activasP2}</div></td>
       <td>${ok(e.okCalificadas)} ${info.calificadas} / ${e.rango.calificadas}<div class="ra-sub">P1: ${info.calificadasP1} · P2: ${info.calificadasP2}</div></td>
       <td>${ok(e.okCompra)} ${fmtMxn(e.valorCompra)} / ${fmtMxn(e.rango.compraLider)}<div class="ra-sub">${e.soloUnPeriodo ? 'el mayor de P1 o P2' : 'el menor de P1 y P2 (ambos periodos)'}</div></td>
       <td>${e.rango.key === info.rango.key ? '<b class="ra-ok">Recalifica</b>' : (e.califica ? '<span class="ra-sub">También cumple</span>' : '<span class="ra-no">No</span>')}</td>
@@ -2921,6 +2921,9 @@ function renderRankAudit(leaderId, monthKey){
     </div>
     <div class="commissions-stats">
       ${stat(`Activas (${monthKeyLabel(monthKey)}) (≥${COMISION_ACTIVE_MIN} pts en P1 y P2)`, info.activas)}
+      ${stat('Activas por periodo (informativo)', `P1: ${info.activasP1} · P2: ${info.activasP2}`)}
+    </div>
+    <div class="commissions-stats">
       ${stat(`Calificadas (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)`, info.calificadas)}
       ${stat('Calificadas por periodo (informativo)', `P1: ${info.calificadasP1} · P2: ${info.calificadasP2}`)}
     </div>
@@ -3628,8 +3631,10 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const seen = new Set([leaderId]);
   // "Activas" y "calificadas" exigen que la persona llegue a su umbral en LOS
   // DOS periodos del mes (P1 y P2), no solo en la suma — igual que el portal
-  // y Brillo. calificadasP1/calificadasP2 quedan solo como dato informativo.
-  let activas = 0, calificadas = 0, calificadasP1 = 0, calificadasP2 = 0;
+  // y Brillo. activasP1/activasP2/calificadasP1/calificadasP2 quedan solo
+  // como dato informativo (útil para ver el avance de un mes que aún no
+  // cierra, sin que cambien el conteo final que exige ambos periodos).
+  let activas = 0, activasP1 = 0, activasP2 = 0, calificadas = 0, calificadasP1 = 0, calificadasP2 = 0;
 
   const lines = (children[leaderId] || []).map(direct => {
     let p1 = 0, p2 = 0, personas = 0;
@@ -3644,6 +3649,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
       p1 += pts.p1;
       p2 += pts.p2;
       if(pts.p1 >= COMISION_ACTIVE_MIN && pts.p2 >= COMISION_ACTIVE_MIN) activas++;
+      if(pts.p1 >= COMISION_ACTIVE_MIN) activasP1++;
+      if(pts.p2 >= COMISION_ACTIVE_MIN) activasP2++;
       if(pts.p1 >= COMISION_QUALIFIED_MIN) calificadasP1++;
       if(pts.p2 >= COMISION_QUALIFIED_MIN) calificadasP2++;
       if(pts.p1 >= COMISION_QUALIFIED_MIN && pts.p2 >= COMISION_QUALIFIED_MIN) calificadas++;
@@ -3705,6 +3712,8 @@ function getMonthlyRankInfo(leaderId, monthKey){
   return {
     lines,
     activas,
+    activasP1,
+    activasP2,
     calificadas,
     calificadasP1,
     calificadasP2,
