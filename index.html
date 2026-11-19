@@ -2839,7 +2839,7 @@ function renderCommissionsView(leaderId, monthKey){
     <div class="commissions-stats">
       <div class="commissions-stat"><div class="cs-label">Rango vigente</div><div class="cs-value">${escapeHtml(rankInfo.rango.label)}</div></div>
       <div class="commissions-stat"><div class="cs-label">${isManual ? 'Rango capturado a mano' : 'Logrado en'}</div><div class="cs-value" style="font-size:14px;">${isManual ? 'Sin mes anterior' : monthKeyLabel(prevMonthKey)}</div></div>
-      <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_ACTIVE_MIN} pts en P1 y P2)</div><div class="cs-value">${rankInfo.activas}</div></div>
+      <div class="commissions-stat"><div class="cs-label">Activas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_ACTIVE_MIN} pts en el mes)</div><div class="cs-value">${rankInfo.activas}</div></div>
       <div class="commissions-stat"><div class="cs-label">Calificadas (${monthKeyLabel(prevMonthKey)}) (≥${COMISION_QUALIFIED_MIN} pts en P1 y P2)</div><div class="cs-value">${rankInfo.calificadas}</div></div>
     </div>
     ${periodBlock('Periodo 1', periodo1)}
@@ -2920,7 +2920,7 @@ function renderRankAudit(leaderId, monthKey){
       ${stat('Producción mensual', fmtPts(info.produccion) + ' pts')}
     </div>
     <div class="commissions-stats">
-      ${stat(`Activas (${monthKeyLabel(monthKey)}) (≥${COMISION_ACTIVE_MIN} pts en P1 y P2)`, info.activas)}
+      ${stat(`Activas (${monthKeyLabel(monthKey)}) (≥${COMISION_ACTIVE_MIN} pts en el mes)`, info.activas)}
       ${stat('Activas por periodo (informativo)', `P1: ${info.activasP1} · P2: ${info.activasP2}`)}
     </div>
     <div class="commissions-stats">
@@ -3629,11 +3629,12 @@ function getMonthlyRankInfo(leaderId, monthKey){
   const leader = members.find(m => m.id === leaderId);
   const children = buildChildrenMap();
   const seen = new Set([leaderId]);
-  // "Activas" y "calificadas" exigen que la persona llegue a su umbral en LOS
-  // DOS periodos del mes (P1 y P2), no solo en la suma — igual que el portal
-  // y Brillo. activasP1/activasP2/calificadasP1/calificadasP2 quedan solo
-  // como dato informativo (útil para ver el avance de un mes que aún no
-  // cierra, sin que cambien el conteo final que exige ambos periodos).
+  // "Activas" cuenta a quien, sumando P1 + P2 del mes, llega a $500 — sin
+  // importar cómo se repartió entre los dos periodos (regla propia de
+  // mi-equipo, distinta a la del portal/Brillo). "Calificadas" sí exige el
+  // umbral en LOS DOS periodos por separado, igual que el portal/Brillo.
+  // activasP1/activasP2/calificadasP1/calificadasP2 quedan solo como dato
+  // informativo (útil para ver el avance de un mes que aún no cierra).
   let activas = 0, activasP1 = 0, activasP2 = 0, calificadas = 0, calificadasP1 = 0, calificadasP2 = 0;
 
   const lines = (children[leaderId] || []).map(direct => {
@@ -3648,7 +3649,7 @@ function getMonthlyRankInfo(leaderId, monthKey){
       const pts = memberPeriodPoints(m, monthKey);
       p1 += pts.p1;
       p2 += pts.p2;
-      if(pts.p1 >= COMISION_ACTIVE_MIN && pts.p2 >= COMISION_ACTIVE_MIN) activas++;
+      if(pts.p1 + pts.p2 >= COMISION_ACTIVE_MIN) activas++;
       if(pts.p1 >= COMISION_ACTIVE_MIN) activasP1++;
       if(pts.p2 >= COMISION_ACTIVE_MIN) activasP2++;
       if(pts.p1 >= COMISION_QUALIFIED_MIN) calificadasP1++;
@@ -3807,7 +3808,7 @@ function buildCommissionsWorkbook(leader, monthKey, prevMonthKey, team, rankInfo
     isManual
       ? ["Rango base", "Capturado a mano (sin datos de " + monthKeyLabel(prevMonthKey) + ")"]
       : ["Rango logrado en (mes base)", monthKeyLabel(prevMonthKey)],
-    ["Activas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_ACTIVE_MIN + " pts en P1 y P2)", rankInfo.activas],
+    ["Activas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_ACTIVE_MIN + " pts en el mes)", rankInfo.activas],
     ["Producción grupal de " + monthKeyLabel(prevMonthKey), rankInfo.produccion],
     ["Calificadas en " + monthKeyLabel(prevMonthKey) + " (≥" + COMISION_QUALIFIED_MIN + " pts en P1 y P2)", rankInfo.calificadas],
     [],
